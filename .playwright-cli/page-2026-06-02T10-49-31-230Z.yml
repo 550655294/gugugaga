@@ -1,0 +1,148 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - menu [ref=e6]:
+        - menuitem "logo" [ref=e8] [cursor=pointer]:
+          - img "logo" [ref=e10]
+      - menu [ref=e11]:
+        - generic [ref=e12]:
+          - menuitem "灵感" [ref=e13] [cursor=pointer]:
+            - generic [ref=e20]: 灵感
+          - menuitem "生成" [ref=e21] [cursor=pointer]:
+            - generic [ref=e28]: 生成
+          - menuitem "资产" [ref=e29] [cursor=pointer]:
+            - generic [ref=e36]: 资产
+      - menu [ref=e37]:
+        - generic [ref=e38]:
+          - menuitem
+          - menuitem [ref=e39] [cursor=pointer]:
+            - img [ref=e43]
+          - menuitem [ref=e45] [cursor=pointer]
+          - menuitem [ref=e52] [cursor=pointer]:
+            - img [ref=e57]
+          - menuitem [ref=e59] [cursor=pointer]
+    - generic [ref=e67]:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic [ref=e68]:
+                - text: 开启你的
+                - generic [ref=e69] [cursor=pointer]: Agent 模式
+                - text: 即刻造梦！
+              - generic [ref=e73]:
+                - textbox "Seedance 2.0 全能参考，视频创意无限可能" [ref=e86]
+                - generic [ref=e87]:
+                  - generic [ref=e89]:
+                    - button "Agent 模式" [ref=e90] [cursor=pointer]:
+                      - generic [ref=e93]: Agent 模式
+                    - button "自动" [ref=e96] [cursor=pointer]:
+                      - generic [ref=e99]: 自动
+                    - button "灵感搜索" [ref=e100] [cursor=pointer]:
+                      - generic [ref=e104]: 灵感搜索
+                    - button "创意设计" [ref=e105] [cursor=pointer]:
+                      - generic [ref=e110]: 创意设计
+                  - button [disabled] [ref=e113]
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - tab "发现" [selected]:
+                      - generic: 发现
+                    - tab "短片":
+                      - generic: 短片
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - textbox
+            - generic:
+              - generic:
+                - tabpanel:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+  - generic [ref=e116]:
+    - generic [ref=e120]:
+      - generic [ref=e121]:
+        - menu [ref=e122]:
+          - menuitem "logo" [ref=e124] [cursor=pointer]:
+            - img "logo" [ref=e126]
+        - menu [ref=e127]:
+          - generic [ref=e128]:
+            - menuitem "灵感" [ref=e129] [cursor=pointer]:
+              - generic [ref=e136]: 灵感
+            - menuitem "生成" [ref=e137] [cursor=pointer]:
+              - generic [ref=e144]: 生成
+            - menuitem "资产" [ref=e145] [cursor=pointer]:
+              - generic [ref=e152]: 资产
+        - menu [ref=e153]:
+          - generic [ref=e154]:
+            - menuitem
+            - menuitem [ref=e155] [cursor=pointer]:
+              - img [ref=e160]
+            - menuitem [ref=e161] [cursor=pointer]
+            - menuitem [ref=e168] [cursor=pointer]:
+              - img [ref=e173]
+            - menuitem [ref=e175] [cursor=pointer]
+      - generic [ref=e186]:
+        - generic [ref=e187]:
+          - generic [ref=e189]:
+            - generic [ref=e190]:
+              - text: 开启你的
+              - generic [ref=e191] [cursor=pointer]: Agent 模式
+              - text: 即刻造梦！
+            - generic [ref=e195]:
+              - textbox "Seedance 2.0 全能参考，视频创意无限可能" [ref=e206]
+              - generic [ref=e207]:
+                - generic [ref=e209]:
+                  - button "Agent 模式" [ref=e210] [cursor=pointer]:
+                    - generic [ref=e213]: Agent 模式
+                  - button "自动" [ref=e216] [cursor=pointer]:
+                    - generic [ref=e219]: 自动
+                  - button "使用技能" [ref=e220] [cursor=pointer]:
+                    - generic [ref=e223]: 使用技能
+                - button [disabled] [ref=e226]
+          - generic [ref=e255]:
+            - generic [ref=e257]:
+              - generic [ref=e259]:
+                - tab "发现" [selected] [ref=e260] [cursor=pointer]:
+                  - generic [ref=e262]: 发现
+                - tab "短片" [ref=e263] [cursor=pointer]:
+                  - generic [ref=e265]: 短片
+                - tab "活动" [ref=e266] [cursor=pointer]:
+                  - generic [ref=e268]: 活动
+              - textbox [ref=e280]
+            - tabpanel "发现" [ref=e283]
+        - generic [ref=e290]:
+          - generic [ref=e291]:
+            - textbox "Seedance 2.0 全能参考，视频创意无限可能" [ref=e301]
+            - button [disabled] [ref=e302]
+          - generic [ref=e307]:
+            - button "Agent 模式" [ref=e308] [cursor=pointer]:
+              - generic [ref=e311]: Agent 模式
+            - button "自动" [ref=e314] [cursor=pointer]:
+              - generic [ref=e317]: 自动
+            - button "使用技能" [ref=e318] [cursor=pointer]:
+              - generic [ref=e321]: 使用技能
+    - status [ref=e325]

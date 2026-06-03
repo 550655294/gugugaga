@@ -1,0 +1,7 @@
+[VIDEO] 即梦文生视频
+   prompt: 一只可爱的小猫
+   比例: 16:9, 帧数: 25, 种子: -1
+
+  [SEND] 提交 jimeng_t2v_v30_1080p...
+
+[ERR] 错误: HTTP 401: {"code":50400,"data":null,"message":"Access Denied: Access Denied","request_id":"202606021739507D4D5A1502DCB3A77E91","status":50400,"time_elapsed":"220.342µs"}

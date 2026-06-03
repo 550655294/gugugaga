@@ -1,0 +1,224 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e116]:
+    - generic [ref=e120]:
+      - generic [ref=e121]:
+        - menu [ref=e122]:
+          - menuitem "logo" [ref=e124] [cursor=pointer]:
+            - img "logo" [ref=e126]
+        - menu [ref=e127]:
+          - generic [ref=e128]:
+            - menuitem "灵感" [ref=e129] [cursor=pointer]:
+              - generic [ref=e136]: 灵感
+            - menuitem "生成" [ref=e137] [cursor=pointer]:
+              - generic [ref=e144]: 生成
+            - menuitem "资产" [ref=e145] [cursor=pointer]:
+              - generic [ref=e152]: 资产
+            - menuitem "画布" [ref=e153] [cursor=pointer]:
+              - generic [ref=e160]: 画布
+            - menuitem "Octo Octo Beta" [ref=e161] [cursor=pointer]:
+              - generic [ref=e162]:
+                - img "Octo" [ref=e164]
+                - generic [ref=e165]: Octo
+                - generic [ref=e166]: Beta
+        - menu [ref=e167]:
+          - generic [ref=e168]:
+            - menuitem [ref=e169]
+            - menuitem
+            - menuitem [ref=e170] [cursor=pointer]
+            - menuitem "登录" [ref=e172] [cursor=pointer]:
+              - generic [ref=e174]: 登录
+            - menuitem [ref=e175] [cursor=pointer]
+            - menuitem [ref=e183] [cursor=pointer]:
+              - img [ref=e189]
+            - menuitem [ref=e191] [cursor=pointer]
+      - generic [ref=e203]:
+        - generic [ref=e204]:
+          - generic [ref=e206]:
+            - generic [ref=e207]:
+              - text: 开启你的
+              - generic [ref=e208]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Agent 模式
+                    - generic:
+                      - generic: 图片生成
+                    - generic:
+                      - generic: 视频生成
+                    - generic:
+                      - generic: 数字人
+                    - generic:
+                      - generic: 配音生成
+                    - generic:
+                      - generic: 动作模仿
+              - text: 即刻造梦！
+            - generic [ref=e215]:
+              - generic [ref=e216]:
+                - generic [ref=e636] [cursor=pointer]: 参考内容
+                - textbox [ref=e640]:
+                  - paragraph [ref=e641]: 上传1-12个参考素材、输入文字，自由组合图、文、音、视频多元素，定义精彩互动。例如：@图片1 模仿 @视频1 的动作，音色参考 @音频1。
+              - generic [ref=e642]:
+                - generic [ref=e644]:
+                  - combobox [ref=e645] [cursor=pointer]:
+                    - generic [ref=e648]: 视频生成
+                  - combobox [ref=e656] [cursor=pointer]:
+                    - generic [ref=e659]: Seedance 2.0 Fast VIP
+                  - combobox [ref=e663] [cursor=pointer]:
+                    - generic [ref=e671]: 全能参考
+                  - button "16:9" [ref=e676] [cursor=pointer]:
+                    - generic [ref=e679]: 16:9
+                  - combobox [ref=e680] [cursor=pointer]:
+                    - generic [ref=e683]: 4s
+                - generic [ref=e687]:
+                  - generic [ref=e688] [cursor=pointer]: "0"
+                  - button [disabled] [ref=e692]
+            - generic:
+              - generic:
+                - button "去查看":
+                  - generic: 去查看
+            - generic [ref=e271]:
+              - button "Octo Vibe create，创作自然流动 Octo Vibe create，创作自然流动 Beta" [ref=e272] [cursor=pointer]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading "Octo" [level=3]
+                      - generic: Vibe create，创作自然流动
+                    - generic:
+                      - heading "Octo" [level=3]:
+                        - generic: Octo
+                      - generic: Vibe create，创作自然流动
+                - generic [ref=e275]: Beta
+              - button "无限画布 自由创作 无限画布 自由创作" [ref=e276] [cursor=pointer]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading "无限画布" [level=3]
+                      - generic: 自由创作
+                    - generic:
+                      - heading "无限画布" [level=3]:
+                        - generic: 无限画布
+                      - generic: 自由创作
+              - button "Agent 模式 S2.0视频创作 Seedance 2.0 全能视频创作" [ref=e279] [cursor=pointer]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading "Agent 模式" [level=3]
+                      - generic: S2.0视频创作
+                    - generic:
+                      - heading "Seedance 2.0" [level=3]:
+                        - generic: Seedance 2.0
+                      - generic: 全能视频创作
+              - button "图片生成 智能美学提升 4.1智能美学 即刻想象" [ref=e282] [cursor=pointer]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading "图片生成" [level=3]
+                      - generic: 智能美学提升
+                    - generic:
+                      - heading "4.1智能美学" [level=3]:
+                        - generic: 4.1智能美学
+                      - generic: 即刻想象
+              - button "视频生成 一镜到底 视频生成 一镜到底" [ref=e285] [cursor=pointer]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading "视频生成" [level=3]
+                      - generic: 一镜到底
+                    - generic:
+                      - heading "视频生成" [level=3]:
+                        - generic: 视频生成
+                      - generic: 一镜到底
+          - generic [ref=e288]:
+            - generic [ref=e290]:
+              - generic [ref=e292]:
+                - tab "发现" [selected] [ref=e293] [cursor=pointer]:
+                  - generic [ref=e295]: 发现
+                - tab "短片" [ref=e296] [cursor=pointer]:
+                  - generic [ref=e298]: 短片
+                - tab "活动" [ref=e299] [cursor=pointer]:
+                  - generic [ref=e301]: 活动
+              - textbox "卡通字体" [ref=e316]
+            - tabpanel "发现" [ref=e319]:
+              - generic [ref=e322]:
+                - generic [ref=e324]:
+                  - generic [ref=e325]:
+                    - generic [ref=e327] [cursor=pointer]:
+                      - img [ref=e329]
+                      - generic [ref=e331]:
+                        - paragraph [ref=e332]: VITA SHORTS 2026：AI 短片竞赛单元征稿
+                        - paragraph [ref=e333]:
+                          - text: 已有
+                          - generic [ref=e334]: "888"
+                          - text: 人参与
+                    - generic [ref=e336] [cursor=pointer]:
+                      - img [ref=e338]
+                      - paragraph [ref=e341]: 即梦AI 创作者成长计划 · 新视觉
+                    - generic [ref=e343] [cursor=pointer]:
+                      - img [ref=e345]
+                      - paragraph [ref=e348]: 即梦AI 创作者成长计划 · 新影像
+                  - generic:
+                    - button "上一个" [ref=e349] [cursor=pointer]
+                    - button "下一个" [ref=e352] [cursor=pointer]
+                - img [ref=e364] [cursor=pointer]
+                - img [ref=e369] [cursor=pointer]
+                - img [ref=e374] [cursor=pointer]
+                - img [ref=e379] [cursor=pointer]
+                - img [ref=e384] [cursor=pointer]
+                - img [ref=e389] [cursor=pointer]
+                - img [ref=e394] [cursor=pointer]
+                - img [ref=e399] [cursor=pointer]
+                - img [ref=e404] [cursor=pointer]
+                - img [ref=e409] [cursor=pointer]
+                - img [ref=e414] [cursor=pointer]
+                - img [ref=e419] [cursor=pointer]
+                - img [ref=e424] [cursor=pointer]
+                - img [ref=e429] [cursor=pointer]
+                - img [ref=e434] [cursor=pointer]
+                - img [ref=e439] [cursor=pointer]
+                - img [ref=e444] [cursor=pointer]
+                - img [ref=e449] [cursor=pointer]
+                - img [ref=e454] [cursor=pointer]
+                - img [ref=e459] [cursor=pointer]
+                - img [ref=e464] [cursor=pointer]
+                - img [ref=e469] [cursor=pointer]
+                - img [ref=e475] [cursor=pointer]
+                - img [ref=e481] [cursor=pointer]
+                - img [ref=e487] [cursor=pointer]
+                - img [ref=e493] [cursor=pointer]
+                - img [ref=e499] [cursor=pointer]
+                - img [ref=e505] [cursor=pointer]
+                - img [ref=e511] [cursor=pointer]
+                - img [ref=e517] [cursor=pointer]
+                - img [ref=e523] [cursor=pointer]
+                - img [ref=e529] [cursor=pointer]
+                - img [ref=e535] [cursor=pointer]
+                - img [ref=e541] [cursor=pointer]
+                - img [ref=e547] [cursor=pointer]
+                - img [ref=e553] [cursor=pointer]
+                - img [ref=e559] [cursor=pointer]
+        - generic [ref=e564]:
+          - generic [ref=e565]:
+            - generic [ref=e713] [cursor=pointer]: 参考内容
+            - textbox [ref=e717]:
+              - paragraph [ref=e718]: 上传1-12个参考素材、输入文字，自由组合图、文、音、视频多元素，定义精彩互动。例如：@图片1 模仿 @视频1 的动作，音色参考 @音频1。
+            - button [disabled] [ref=e719]
+          - generic [ref=e723]:
+            - generic [ref=e724]:
+              - combobox [ref=e725] [cursor=pointer]:
+                - generic [ref=e728]: 视频生成
+              - combobox [ref=e736] [cursor=pointer]:
+                - generic [ref=e739]: Seedance 2.0 Fast VIP
+              - combobox [ref=e743] [cursor=pointer]:
+                - generic [ref=e751]: 全能参考
+              - button "16:9" [ref=e756] [cursor=pointer]:
+                - generic [ref=e759]: 16:9
+              - combobox [ref=e760] [cursor=pointer]:
+                - generic [ref=e763]: 4s
+            - button [ref=e768] [cursor=pointer]
+        - generic:
+          - generic:
+            - button "去查看":
+              - generic: 去查看
+    - status [ref=e626]
+  - tooltip "上传参考内容" [ref=e794]:
+    - generic [ref=e795]: 上传参考内容
