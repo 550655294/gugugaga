@@ -1,0 +1,36 @@
+- banner [ref=e2]:
+  - generic [ref=e4]:
+    - list [ref=e5]:
+      - listitem [ref=e6]:
+        - link "首页" [ref=e7] [cursor=pointer]:
+          - /url: //www.bilibili.com
+          - img [ref=e8]
+          - generic [ref=e10]:
+            - generic [ref=e11]: 首页
+            - img [ref=e12]
+      - listitem [ref=e15]:
+        - link "番剧" [ref=e16] [cursor=pointer]:
+          - /url: //www.bilibili.com/anime/
+      - listitem [ref=e17]:
+        - link "直播" [ref=e18] [cursor=pointer]:
+          - /url: //live.bilibili.com
+      - listitem [ref=e19]:
+        - link "游戏中心" [ref=e20] [cursor=pointer]:
+          - /url: //game.bilibili.com/platform
+      - listitem [ref=e21]:
+        - link "会员购" [ref=e22] [cursor=pointer]:
+          - /url: //show.bilibili.com/platform/home.html?msource=pc_web
+      - listitem [ref=e23]:
+        - link "漫画" [ref=e24] [cursor=pointer]:
+          - /url: //manga.bilibili.com?from=bill_top_mnav
+      - listitem [ref=e25]:
+        - link "赛事" [ref=e26] [cursor=pointer]:
+          - /url: //www.bilibili.com/match/home/
+      - listitem [ref=e27]:
+        - link "下载客户端" [ref=e28] [cursor=pointer]:
+          - /url: //app.bilibili.com
+          - img [ref=e29]
+          - generic [ref=e32]: 下载客户端
+    - generic [ref=e36]:
+      - textbox [ref=e38]
+      - img [ref=e40] [cursor=pointer]

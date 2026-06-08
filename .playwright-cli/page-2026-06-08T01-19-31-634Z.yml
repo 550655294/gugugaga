@@ -1,0 +1,550 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - list [ref=e5]:
+      - listitem [ref=e6]:
+        - link "首页" [ref=e7] [cursor=pointer]:
+          - /url: //www.bilibili.com
+          - img [ref=e8]
+          - generic [ref=e10]:
+            - text: 首页
+            - img [ref=e11]
+      - listitem [ref=e14]:
+        - link "番剧" [ref=e15] [cursor=pointer]:
+          - /url: //www.bilibili.com/anime/
+      - listitem [ref=e16]:
+        - link "直播" [ref=e17] [cursor=pointer]:
+          - /url: //live.bilibili.com/
+      - listitem [ref=e18]:
+        - link "游戏中心" [ref=e19] [cursor=pointer]:
+          - /url: //game.bilibili.com/
+      - listitem [ref=e20]:
+        - link "会员购" [ref=e21] [cursor=pointer]:
+          - /url: //show.bilibili.com/platform/home.html?msource=pc_web
+      - listitem [ref=e22]:
+        - link "漫画" [ref=e23] [cursor=pointer]:
+          - /url: //manga.bilibili.com?from=bill_top_mnav
+      - listitem [ref=e24]:
+        - link "赛事" [ref=e25] [cursor=pointer]:
+          - /url: //www.bilibili.com/v/game/match/
+    - list [ref=e26]:
+      - listitem [ref=e27] [cursor=pointer]:
+        - generic [ref=e28]:
+          - img [ref=e29]
+          - generic [ref=e32]: 投稿
+  - generic [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - heading "企鹅管理员|三视图|AI素材|三种画风（2D、3D、写实）" [level=1] [ref=e38]
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - img [ref=e42]
+            - generic [ref=e43]: 1.1万
+          - generic [ref=e44]:
+            - img [ref=e45]
+            - generic [ref=e46]: "1"
+          - generic [ref=e48]: 2026-03-14 20:13:38
+          - generic [ref=e50]:
+            - img [ref=e51]
+            - generic [ref=e52]: 该内容疑似使用AI技术合成，请谨慎甄别
+          - generic [ref=e53]:
+            - img [ref=e54]
+            - generic [ref=e55]: 未经作者授权，禁止转载
+      - generic "哔哩哔哩播放器" [ref=e65]
+      - generic [ref=e75]:
+        - generic [ref=e77]:
+          - generic "点赞（Q）" [ref=e79] [cursor=pointer]:
+            - img [ref=e80]
+            - generic [ref=e82]: "592"
+          - generic "投币（W）" [ref=e84] [cursor=pointer]:
+            - img [ref=e85]
+            - generic [ref=e87]: "99"
+          - generic "收藏（E）" [ref=e89] [cursor=pointer]:
+            - img [ref=e90]
+            - generic [ref=e92]: "488"
+          - generic [ref=e95] [cursor=pointer]:
+            - img [ref=e96]
+            - generic [ref=e98]: "19"
+        - img [ref=e101] [cursor=pointer]
+      - generic [ref=e104]: 点个赞吧~
+      - generic [ref=e106]:
+        - generic "发现《やったー!》" [ref=e109] [cursor=pointer]:
+          - img [ref=e110]
+          - generic [ref=e112]: 发现《やったー!》
+          - img [ref=e113]
+        - link "素材" [ref=e117] [cursor=pointer]:
+          - /url: //search.bilibili.com/all?keyword=%E7%B4%A0%E6%9D%90&from_source=video_tag
+        - link "小企鹅" [ref=e120] [cursor=pointer]:
+          - /url: //search.bilibili.com/all?keyword=%E5%B0%8F%E4%BC%81%E9%B9%85&from_source=video_tag
+        - link "管理员" [ref=e123] [cursor=pointer]:
+          - /url: //search.bilibili.com/all?keyword=%E7%AE%A1%E7%90%86%E5%91%98&from_source=video_tag
+        - link "ai" [ref=e126] [cursor=pointer]:
+          - /url: //search.bilibili.com/all?keyword=ai&from_source=video_tag
+        - link "咕咕嘎嘎" [ref=e129] [cursor=pointer]:
+          - /url: //search.bilibili.com/all?keyword=%E5%92%95%E5%92%95%E5%98%8E%E5%98%8E&from_source=video_tag
+        - link "必剪创作" [ref=e132] [cursor=pointer]:
+          - /url: //search.bilibili.com/all?keyword=%E5%BF%85%E5%89%AA%E5%88%9B%E4%BD%9C&from_source=video_tag
+      - generic [ref=e133]:
+        - link:
+          - /url: javascript:void(0);
+    - generic:
+      - generic:
+        - generic [ref=e136]:
+          - link [ref=e139] [cursor=pointer]:
+            - /url: //space.bilibili.com/605068441/?spm_id_from=333.788.upinfo.head.click
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - link "蓝蓝铜离子" [ref=e144] [cursor=pointer]:
+                - /url: //space.bilibili.com/605068441/?spm_id_from=333.788.upinfo.detail.click
+              - link " 发消息" [ref=e145] [cursor=pointer]:
+                - /url: //message.bilibili.com/?spm_id_from=333.788.upinfo.detail.click#whisper/mid605068441
+                - generic [ref=e146]: 
+                - text: 发消息
+            - generic "刷到什么做什么" [ref=e147]
+        - generic [ref=e154]:
+          - link "早说呀，我的头发还能再拯救一下 微粒贷 52.9万 0" [ref=e156] [cursor=pointer]:
+            - /url: javascript:void(0);
+            - generic [ref=e157]:
+              - img [ref=e160]
+              - generic [ref=e163]:
+                - generic "早说呀，我的头发还能再拯救一下" [ref=e164]
+                - generic [ref=e166]:
+                  - img [ref=e167]
+                  - generic [ref=e168]: 微粒贷
+                - generic [ref=e169]:
+                  - img [ref=e170]
+                  - text: 52.9万
+                  - img [ref=e171]
+                  - text: "0"
+          - img [ref=e173]
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - generic [ref=e176]:
+              - generic [ref=e177]:
+                - generic [ref=e178]:
+                  - link "人物三视图" [ref=e179] [cursor=pointer]:
+                    - /url: //space.bilibili.com/605068441/channel/collectiondetail?sid=7809948&spm_id_from=333.788.0.0
+                  - generic [ref=e180]: （17/18）
+                - generic [ref=e184] [cursor=pointer]: 自动连播
+              - generic [ref=e187]:
+                - generic [ref=e188]:
+                  - generic [ref=e189]: 6.1万播放
+                  - generic [ref=e190] [cursor=pointer]:
+                    - img [ref=e191]
+                    - text: 简介
+                - generic [ref=e193] [cursor=pointer]: 订阅合集
+            - generic [ref=e195]:
+              - generic [ref=e198] [cursor=pointer]:
+                - generic "佩佩＆汤汤|三视图|AI素材|" [ref=e199]:
+                  - generic [ref=e200]: 佩佩＆汤汤|三视图|AI素材|
+                - generic [ref=e202]: 00:17
+              - generic [ref=e205] [cursor=pointer]:
+                - generic "金狼|三视图|AI素材|" [ref=e206]:
+                  - generic [ref=e207]: 金狼|三视图|AI素材|
+                - generic [ref=e209]: 00:16
+              - generic [ref=e212] [cursor=pointer]:
+                - generic "喵喵三形态｜三视图｜ai素材" [ref=e213]:
+                  - generic [ref=e214]: 喵喵三形态｜三视图｜ai素材
+                - generic [ref=e216]: 00:35
+              - generic [ref=e219] [cursor=pointer]:
+                - generic "伊冯&陈千语｜三视图｜ai素材｜" [ref=e220]:
+                  - generic [ref=e221]: 伊冯&陈千语｜三视图｜ai素材｜
+                - generic [ref=e223]: 00:23
+              - generic [ref=e226] [cursor=pointer]:
+                - generic "宝宝汪＆爱音奶侬|三视图|AI素材|" [ref=e227]:
+                  - generic [ref=e228]: 宝宝汪＆爱音奶侬|三视图|AI素材|
+                - generic [ref=e230]: 00:27
+              - generic [ref=e233] [cursor=pointer]:
+                - generic "anon汪&粉色奶龙｜三视图丨ai素材" [ref=e234]:
+                  - generic [ref=e235]: anon汪&粉色奶龙｜三视图丨ai素材
+                - generic [ref=e237]: 00:20
+              - generic [ref=e240] [cursor=pointer]:
+                - generic "威虫＆哈吉蜂＆麦小鼠|三视图|AI素材" [ref=e241]:
+                  - generic [ref=e242]: 威虫＆哈吉蜂＆麦小鼠|三视图|AI素材
+                - generic [ref=e244]: 00:27
+              - generic [ref=e247] [cursor=pointer]:
+                - generic "soro狸＆天素罗饱饱|三视图|AI素材" [ref=e248]:
+                  - generic [ref=e249]: soro狸＆天素罗饱饱|三视图|AI素材
+                - generic [ref=e251]: 00:27
+              - generic [ref=e254] [cursor=pointer]:
+                - generic "mygo全员玩偶|三视图|AI素材" [ref=e255]:
+                  - generic [ref=e256]: mygo全员玩偶|三视图|AI素材
+                - img [ref=e259]
+              - generic [ref=e262] [cursor=pointer]:
+                - generic "菲比啾比|三视图|AI素材|三种画风（2D、3D、写实）" [ref=e263]:
+                  - generic [ref=e264]: 菲比啾比|三视图|AI素材|三种画风（2D、3D、写实）
+                - generic [ref=e266]: 00:34
+              - generic [ref=e269] [cursor=pointer]:
+                - generic "🐧凑企鹅＆香企鹅🐧|三视图|AI素材" [ref=e270]:
+                  - generic [ref=e271]: 🐧凑企鹅＆香企鹅🐧|三视图|AI素材
+                - generic [ref=e273]: 00:32
+              - generic [ref=e276] [cursor=pointer]:
+                - generic "比比拉布|三视图|AI素材" [ref=e277]:
+                  - generic [ref=e278]: 比比拉布|三视图|AI素材
+                - generic [ref=e280]: 00:23
+              - generic [ref=e283] [cursor=pointer]:
+                - generic "原神派蒙|三视图|AI素材|三种画风（2D、3D、写实）" [ref=e284]:
+                  - generic [ref=e285]: 原神派蒙|三视图|AI素材|三种画风（2D、3D、写实）
+                - generic [ref=e287]: 00:34
+              - generic [ref=e290] [cursor=pointer]:
+                - generic "我的刀盾|三视图|AI素材|（有刀盾＆无刀盾）" [ref=e291]:
+                  - generic [ref=e292]: 我的刀盾|三视图|AI素材|（有刀盾＆无刀盾）
+                - generic [ref=e294]: 00:34
+              - generic [ref=e297] [cursor=pointer]:
+                - generic "doro|三视图|AI素材|三种画风（2D、3D、写实）" [ref=e298]:
+                  - generic [ref=e299]: doro|三视图|AI素材|三种画风（2D、3D、写实）
+                - generic [ref=e301]: 00:32
+              - generic [ref=e304] [cursor=pointer]:
+                - generic "砂狼白子|三视图|AI素材|三种画风（2D、3D、写实）" [ref=e305]:
+                  - generic [ref=e306]: 砂狼白子|三视图|AI素材|三种画风（2D、3D、写实）
+                - img [ref=e309]
+              - generic [ref=e312] [cursor=pointer]:
+                - generic "企鹅管理员|三视图|AI素材|三种画风（2D、3D、写实）" [ref=e313]:
+                  - generic [ref=e315]: 企鹅管理员|三视图|AI素材|三种画风（2D、3D、写实）
+                - generic [ref=e317]: 00:31
+              - generic [ref=e320] [cursor=pointer]:
+                - generic "陈千语＆伊冯＆佩丽卡|三视图|AI素材|" [ref=e321]:
+                  - generic [ref=e322]: 陈千语＆伊冯＆佩丽卡|三视图|AI素材|
+                - generic [ref=e324]: 00:29
+          - generic [ref=e325]:
+            - generic [ref=e326]:
+              - generic [ref=e328]:
+                - generic [ref=e331]:
+                  - link:
+                    - /url: /video/BV1svVZ6rEk2/?spm_id_from=333.788.playrecommendByOp.0
+                - generic [ref=e333]:
+                  - link "零基础AI变现做爆款，这你都不学吗？" [ref=e334] [cursor=pointer]:
+                    - /url: /video/BV1svVZ6rEk2/?spm_id_from=333.788.playrecommendByOp.0
+                    - paragraph [ref=e335]: 零基础AI变现做爆款，这你都不学吗？
+                  - link "成河剪辑实战营" [ref=e337] [cursor=pointer]:
+                    - /url: //space.bilibili.com/6673742/
+                    - img [ref=e338]
+                    - generic [ref=e339]: 成河剪辑实战营
+                  - generic [ref=e340]:
+                    - img [ref=e341]
+                    - text: "2979"
+                    - img [ref=e342]
+                    - text: "5"
+              - generic [ref=e344]:
+                - link [ref=e348] [cursor=pointer]:
+                  - /url: /video/BV1ZywkzgEdK/?spm_id_from=333.788.recommend_more_video.0&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e349]:
+                  - link "奶龙‖三视图‖AI素材‖两种画风《奶蛙&奶龙》" [ref=e350] [cursor=pointer]:
+                    - /url: /video/BV1ZywkzgEdK/?spm_id_from=333.788.recommend_more_video.0&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e351]: 奶龙‖三视图‖AI素材‖两种画风《奶蛙&奶龙》
+                  - link "熊出没搞笑社" [ref=e353] [cursor=pointer]:
+                    - /url: //space.bilibili.com/3706928517614544/
+                    - img [ref=e354]
+                    - generic [ref=e355]: 熊出没搞笑社
+                  - generic [ref=e356]:
+                    - img [ref=e357]
+                    - text: "2050"
+                    - img [ref=e358]
+                    - text: "0"
+              - generic [ref=e360]:
+                - link [ref=e364] [cursor=pointer]:
+                  - /url: /video/BV1F5DvBtEbF/?spm_id_from=333.788.recommend_more_video.1&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e365]:
+                  - link "缝好企鹅服，挡住小咕嘎的屁股蛋" [ref=e366] [cursor=pointer]:
+                    - /url: /video/BV1F5DvBtEbF/?spm_id_from=333.788.recommend_more_video.1&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e367]: 缝好企鹅服，挡住小咕嘎的屁股蛋
+                  - link "凑企鹅大作战" [ref=e369] [cursor=pointer]:
+                    - /url: //space.bilibili.com/3691011886811563/
+                    - img [ref=e370]
+                    - generic [ref=e371]: 凑企鹅大作战
+                  - generic [ref=e372]:
+                    - img [ref=e373]
+                    - text: 29.0万
+                    - img [ref=e374]
+                    - text: "55"
+              - generic [ref=e376]:
+                - link [ref=e380] [cursor=pointer]:
+                  - /url: /video/BV1UpAjzpEoE/?spm_id_from=333.788.recommend_more_video.2&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e381]:
+                  - link "吃蛋糕的可爱小企鹅~" [ref=e382] [cursor=pointer]:
+                    - /url: /video/BV1UpAjzpEoE/?spm_id_from=333.788.recommend_more_video.2&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e383]: 吃蛋糕的可爱小企鹅~
+                  - link "無卍名" [ref=e385] [cursor=pointer]:
+                    - /url: //space.bilibili.com/29243449/
+                    - img [ref=e386]
+                    - generic [ref=e387]: 無卍名
+                  - generic [ref=e388]:
+                    - img [ref=e389]
+                    - text: 34.0万
+                    - img [ref=e390]
+                    - text: "71"
+              - generic [ref=e392]:
+                - link [ref=e396] [cursor=pointer]:
+                  - /url: /video/BV1VLoaBQEHN/?spm_id_from=333.788.recommend_more_video.3&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e397]:
+                  - link "咕咕嘎嘎还可以送去转转？" [ref=e398] [cursor=pointer]:
+                    - /url: /video/BV1VLoaBQEHN/?spm_id_from=333.788.recommend_more_video.3&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e399]: 咕咕嘎嘎还可以送去转转？
+                  - link "爱企tv价值10万哈夫币" [ref=e401] [cursor=pointer]:
+                    - /url: //space.bilibili.com/3706948899834151/
+                    - img [ref=e402]
+                    - generic [ref=e403]: 爱企tv价值10万哈夫币
+                  - generic [ref=e404]:
+                    - img [ref=e405]
+                    - text: 2.1万
+                    - img [ref=e406]
+                    - text: "9"
+              - generic [ref=e408]:
+                - link [ref=e412] [cursor=pointer]:
+                  - /url: /video/BV1LmPazLEmz/?spm_id_from=333.788.recommend_more_video.4&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e413]:
+                  - link "【补档】没什么，只是想让你知道这只企鹅的出处" [ref=e414] [cursor=pointer]:
+                    - /url: /video/BV1LmPazLEmz/?spm_id_from=333.788.recommend_more_video.4&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e415]: 【补档】没什么，只是想让你知道这只企鹅的出处
+                  - link "四季丶夏目" [ref=e417] [cursor=pointer]:
+                    - /url: //space.bilibili.com/110936913/
+                    - img [ref=e418]
+                    - generic [ref=e419]: 四季丶夏目
+                  - generic [ref=e420]:
+                    - img [ref=e421]
+                    - text: 2.6万
+                    - img [ref=e422]
+                    - text: "2"
+              - generic [ref=e424]:
+                - link [ref=e428] [cursor=pointer]:
+                  - /url: /video/BV1d1XxBwEYn/?spm_id_from=333.788.recommend_more_video.5&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e429]:
+                  - link "不要触碰这只小企鹅！" [ref=e430] [cursor=pointer]:
+                    - /url: /video/BV1d1XxBwEYn/?spm_id_from=333.788.recommend_more_video.5&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e431]: 不要触碰这只小企鹅！
+                  - link "吃蛋挞c" [ref=e433] [cursor=pointer]:
+                    - /url: //space.bilibili.com/20415989/
+                    - img [ref=e434]
+                    - generic [ref=e435]: 吃蛋挞c
+                  - generic [ref=e436]:
+                    - img [ref=e437]
+                    - text: 14.4万
+                    - img [ref=e438]
+                    - text: "9"
+              - generic [ref=e440]:
+                - link [ref=e444] [cursor=pointer]:
+                  - /url: /video/BV1WPwxzYEdE/?spm_id_from=333.788.recommend_more_video.6&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e445]:
+                  - link "事不过三是原则，也是底线！" [ref=e446] [cursor=pointer]:
+                    - /url: /video/BV1WPwxzYEdE/?spm_id_from=333.788.recommend_more_video.6&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e447]: 事不过三是原则，也是底线！
+                  - link "电力小咕嘎" [ref=e449] [cursor=pointer]:
+                    - /url: //space.bilibili.com/1827788677/
+                    - img [ref=e450]
+                    - generic [ref=e451]: 电力小咕嘎
+                  - generic [ref=e452]:
+                    - img [ref=e453]
+                    - text: 27.9万
+                    - img [ref=e454]
+                    - text: "32"
+              - generic [ref=e456]:
+                - link [ref=e460] [cursor=pointer]:
+                  - /url: /video/BV1Bgw5zfEqR/?spm_id_from=333.788.recommend_more_video.7&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e461]:
+                  - link "小企鹅称体重" [ref=e462] [cursor=pointer]:
+                    - /url: /video/BV1Bgw5zfEqR/?spm_id_from=333.788.recommend_more_video.7&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e463]: 小企鹅称体重
+                  - link "xieDr-" [ref=e465] [cursor=pointer]:
+                    - /url: //space.bilibili.com/1593752418/
+                    - img [ref=e466]
+                    - generic [ref=e467]: xieDr-
+                  - generic [ref=e468]:
+                    - img [ref=e469]
+                    - text: 9.0万
+                    - img [ref=e470]
+                    - text: "2"
+              - generic [ref=e472]:
+                - link [ref=e476] [cursor=pointer]:
+                  - /url: /video/BV1YXcozTEEa/?spm_id_from=333.788.recommend_more_video.8&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e477]:
+                  - link "小企鹅惨遭杀鹅盘" [ref=e478] [cursor=pointer]:
+                    - /url: /video/BV1YXcozTEEa/?spm_id_from=333.788.recommend_more_video.8&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e479]: 小企鹅惨遭杀鹅盘
+                  - link "l迷路的麋鹿I" [ref=e481] [cursor=pointer]:
+                    - /url: //space.bilibili.com/11554836/
+                    - img [ref=e482]
+                    - generic [ref=e483]: l迷路的麋鹿I
+                  - generic [ref=e484]:
+                    - img [ref=e485]
+                    - text: 56.4万
+                    - img [ref=e486]
+                    - text: "51"
+              - generic [ref=e488]:
+                - link [ref=e492] [cursor=pointer]:
+                  - /url: /video/BV1jdw2zEEaZ/?spm_id_from=333.788.recommend_more_video.9&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e493]:
+                  - link "企鹅可爱捏" [ref=e494] [cursor=pointer]:
+                    - /url: /video/BV1jdw2zEEaZ/?spm_id_from=333.788.recommend_more_video.9&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e495]: 企鹅可爱捏
+                  - link "白日会做梦啊" [ref=e497] [cursor=pointer]:
+                    - /url: //space.bilibili.com/1304255518/
+                    - img [ref=e498]
+                    - generic [ref=e499]: 白日会做梦啊
+                  - generic [ref=e500]:
+                    - img [ref=e501]
+                    - text: 1.7万
+                    - img [ref=e502]
+                    - text: "0"
+              - generic [ref=e504]:
+                - link [ref=e508] [cursor=pointer]:
+                  - /url: /video/BV14HubzPE6g/?spm_id_from=333.788.recommend_more_video.10&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e509]:
+                  - link "咕咕嘎嘎素材" [ref=e510] [cursor=pointer]:
+                    - /url: /video/BV14HubzPE6g/?spm_id_from=333.788.recommend_more_video.10&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e511]: 咕咕嘎嘎素材
+                  - link "786786765587" [ref=e513] [cursor=pointer]:
+                    - /url: //space.bilibili.com/3461579502782672/
+                    - img [ref=e514]
+                    - generic [ref=e515]: "786786765587"
+                  - generic [ref=e516]:
+                    - img [ref=e517]
+                    - text: 1.6万
+                    - img [ref=e518]
+                    - text: "5"
+              - generic [ref=e520]:
+                - link [ref=e524] [cursor=pointer]:
+                  - /url: /video/BV1HEPGzYEbm/?spm_id_from=333.788.recommend_more_video.11&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e525]:
+                  - link "今天捡到了一只企鹅，咕嘎咕嘎" [ref=e526] [cursor=pointer]:
+                    - /url: /video/BV1HEPGzYEbm/?spm_id_from=333.788.recommend_more_video.11&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e527]: 今天捡到了一只企鹅，咕嘎咕嘎
+                  - link "具有超长年代的AI" [ref=e529] [cursor=pointer]:
+                    - /url: //space.bilibili.com/471328434/
+                    - img [ref=e530]
+                    - generic [ref=e531]: 具有超长年代的AI
+                  - generic [ref=e532]:
+                    - img [ref=e533]
+                    - text: 33.2万
+                    - img [ref=e534]
+                    - text: "15"
+              - generic [ref=e536]:
+                - link [ref=e540] [cursor=pointer]:
+                  - /url: /video/BV1zWAPzPEWY/?spm_id_from=333.788.recommend_more_video.12&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e541]:
+                  - link "用豆包，每天能免费做5个咕咕嘎嘎，酱板鸭视频。" [ref=e542] [cursor=pointer]:
+                    - /url: /video/BV1zWAPzPEWY/?spm_id_from=333.788.recommend_more_video.12&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e543]: 用豆包，每天能免费做5个咕咕嘎嘎，酱板鸭视频。
+                  - link "用爱发呆OWO" [ref=e545] [cursor=pointer]:
+                    - /url: //space.bilibili.com/13197785/
+                    - img [ref=e546]
+                    - generic [ref=e547]: 用爱发呆OWO
+                  - generic [ref=e548]:
+                    - img [ref=e549]
+                    - text: "1138"
+                    - img [ref=e550]
+                    - text: "0"
+              - generic [ref=e552]:
+                - link [ref=e556] [cursor=pointer]:
+                  - /url: /video/BV1JtD8BVEjy/?spm_id_from=333.788.recommend_more_video.13&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e557]:
+                  - link "欺负一只白子？" [ref=e558] [cursor=pointer]:
+                    - /url: /video/BV1JtD8BVEjy/?spm_id_from=333.788.recommend_more_video.13&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e559]: 欺负一只白子？
+                  - link "蓝蓝铜离子" [ref=e561] [cursor=pointer]:
+                    - /url: //space.bilibili.com/605068441/
+                    - img [ref=e562]
+                    - generic [ref=e563]: 蓝蓝铜离子
+                  - generic [ref=e564]:
+                    - img [ref=e565]
+                    - text: 2.5万
+                    - img [ref=e566]
+                    - text: "0"
+              - generic [ref=e568]:
+                - link [ref=e572] [cursor=pointer]:
+                  - /url: /video/BV1wtPtzkEfP/?spm_id_from=333.788.recommend_more_video.14&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e573]:
+                  - link "咕咕嘎嘎" [ref=e574] [cursor=pointer]:
+                    - /url: /video/BV1wtPtzkEfP/?spm_id_from=333.788.recommend_more_video.14&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e575]: 咕咕嘎嘎
+                  - link "星辰值得等待喵" [ref=e577] [cursor=pointer]:
+                    - /url: //space.bilibili.com/651827682/
+                    - img [ref=e578]
+                    - generic [ref=e579]: 星辰值得等待喵
+                  - generic [ref=e580]:
+                    - img [ref=e581]
+                    - text: 15.7万
+                    - img [ref=e582]
+                    - text: "3"
+              - generic [ref=e584]:
+                - link [ref=e588] [cursor=pointer]:
+                  - /url: /video/BV1rVoJBeEmu/?spm_id_from=333.788.recommend_more_video.15&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e589]:
+                  - link "唉？鹅火龙果呢？" [ref=e590] [cursor=pointer]:
+                    - /url: /video/BV1rVoJBeEmu/?spm_id_from=333.788.recommend_more_video.15&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e591]: 唉？鹅火龙果呢？
+                  - link "西格玛将JUN" [ref=e593] [cursor=pointer]:
+                    - /url: //space.bilibili.com/287100144/
+                    - img [ref=e594]
+                    - generic [ref=e595]: 西格玛将JUN
+                  - generic [ref=e596]:
+                    - img [ref=e597]
+                    - text: 2.9万
+                    - img [ref=e598]
+                    - text: "0"
+              - generic [ref=e600]:
+                - link [ref=e604] [cursor=pointer]:
+                  - /url: /video/BV19fwczUEZx/?spm_id_from=333.788.recommend_more_video.16&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e605]:
+                  - link "两分钟教你制作咕咕嘎嘎AI视频" [ref=e606] [cursor=pointer]:
+                    - /url: /video/BV19fwczUEZx/?spm_id_from=333.788.recommend_more_video.16&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e607]: 两分钟教你制作咕咕嘎嘎AI视频
+                  - link "二进制喵同学" [ref=e609] [cursor=pointer]:
+                    - /url: //space.bilibili.com/3690978682603977/
+                    - img [ref=e610]
+                    - generic [ref=e611]: 二进制喵同学
+                  - generic [ref=e612]:
+                    - img [ref=e613]
+                    - text: 7.7万
+                    - img [ref=e614]
+                    - text: "5"
+              - generic [ref=e616]:
+                - link [ref=e620] [cursor=pointer]:
+                  - /url: /video/BV1EhAgzXEXD/?spm_id_from=333.788.recommend_more_video.17&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e621]:
+                  - link "doro‖三视图‖AI素材‖三种画风《2D、3D、写实》" [ref=e622] [cursor=pointer]:
+                    - /url: /video/BV1EhAgzXEXD/?spm_id_from=333.788.recommend_more_video.17&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e623]: doro‖三视图‖AI素材‖三种画风《2D、3D、写实》
+                  - link "熊出没搞笑社" [ref=e625] [cursor=pointer]:
+                    - /url: //space.bilibili.com/3706928517614544/
+                    - img [ref=e626]
+                    - generic [ref=e627]: 熊出没搞笑社
+                  - generic [ref=e628]:
+                    - img [ref=e629]
+                    - text: "2104"
+                    - img [ref=e630]
+                    - text: "0"
+              - generic [ref=e632]:
+                - link [ref=e636] [cursor=pointer]:
+                  - /url: /video/BV1WTwtzuEym/?spm_id_from=333.788.recommend_more_video.18&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e637]:
+                  - link "人不会离开小企鹅的对吧" [ref=e638] [cursor=pointer]:
+                    - /url: /video/BV1WTwtzuEym/?spm_id_from=333.788.recommend_more_video.18&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e639]: 人不会离开小企鹅的对吧
+                  - link "怅一" [ref=e641] [cursor=pointer]:
+                    - /url: //space.bilibili.com/1303661399/
+                    - img [ref=e642]
+                    - generic [ref=e643]: 怅一
+                  - generic [ref=e644]:
+                    - img [ref=e645]
+                    - text: 9.3万
+                    - img [ref=e646]
+                    - text: "22"
+              - generic [ref=e648]:
+                - link [ref=e652] [cursor=pointer]:
+                  - /url: /video/BV1AxwLzBEsj/?spm_id_from=333.788.recommend_more_video.19&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                - generic [ref=e653]:
+                  - link "doro|三视图|AI素材|三种画风（2D、3D、写实）" [ref=e654] [cursor=pointer]:
+                    - /url: /video/BV1AxwLzBEsj/?spm_id_from=333.788.recommend_more_video.19&trackid=web_related_0.router-related-2589621-4gb82.1780881564361.134
+                    - paragraph [ref=e655]: doro|三视图|AI素材|三种画风（2D、3D、写实）
+                  - link "蓝蓝铜离子" [ref=e657] [cursor=pointer]:
+                    - /url: //space.bilibili.com/605068441/
+                    - img [ref=e658]
+                    - generic [ref=e659]: 蓝蓝铜离子
+                  - generic [ref=e660]:
+                    - img [ref=e661]
+                    - text: "3471"
+                    - img [ref=e662]
+                    - text: "0"
+            - generic [ref=e663] [cursor=pointer]: 展开
+          - link "医学生健康科普大赛倒计时！赢万元奖金！" [ref=e665] [cursor=pointer]:
+            - /url: javascript:void(0);
+            - generic [ref=e666]: 医学生健康科普大赛倒计时！赢万元奖金！
