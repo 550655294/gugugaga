@@ -1,0 +1,874 @@
+- generic [active] [ref=e1]:
+  - button "开启读屏标签" [ref=e2]
+  - generic: 读屏标签已关闭
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - link [ref=e7] [cursor=pointer]:
+        - /url: //www.douyin.com/jingxuan
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e15]:
+            - link "精选" [ref=e19] [cursor=pointer]:
+              - /url: https://www.douyin.com/jingxuan?from_nav=1
+              - generic [ref=e22]: 精选
+            - link "推荐" [ref=e27] [cursor=pointer]:
+              - /url: https://www.douyin.com/?recommend=1&from_nav=1
+              - generic [ref=e30]: 推荐
+            - link "搜索" [ref=e35] [cursor=pointer]:
+              - /url: https://www.douyin.com/aisearch?from_nav=1
+              - generic [ref=e38]: 搜索
+            - link "关注" [ref=e44] [cursor=pointer]:
+              - /url: https://www.douyin.com/follow?from_nav=1
+              - generic [ref=e47]: 关注
+            - link "朋友" [ref=e52] [cursor=pointer]:
+              - /url: https://www.douyin.com/friend?from_nav=1
+              - generic [ref=e55]: 朋友
+            - link "我的" [ref=e60] [cursor=pointer]:
+              - /url: https://www.douyin.com/user/self?from_nav=1
+              - generic [ref=e63]: 我的
+            - link "直播" [ref=e69] [cursor=pointer]:
+              - /url: https://live.douyin.com/?from_nav=1
+              - generic [ref=e72]: 直播
+            - link "放映厅" [ref=e77] [cursor=pointer]:
+              - /url: https://www.douyin.com/vs?from_nav=1
+              - generic [ref=e80]: 放映厅
+            - link "短剧" [ref=e85] [cursor=pointer]:
+              - /url: https://www.douyin.com/series?from_nav=1
+              - generic [ref=e88]: 短剧
+            - link "小游戏" [ref=e93] [cursor=pointer]:
+              - /url: https://www.douyin.com/microgame?from_nav=1
+              - generic [ref=e96]: 小游戏
+          - generic [ref=e209]:
+            - img [ref=e210]
+            - generic [ref=e211] [cursor=pointer]:
+              - img [ref=e212]
+              - generic [ref=e213]: 下载抖音精选
+          - generic [ref=e214]:
+            - img [ref=e217] [cursor=pointer]
+            - img [ref=e221] [cursor=pointer]
+            - img [ref=e225] [cursor=pointer]
+            - img [ref=e228] [cursor=pointer]:
+              - img [ref=e229]
+        - contentinfo [ref=e231]:
+          - generic [ref=e232]:
+            - generic [ref=e233]:
+              - generic [ref=e235]: 2026 © 抖音
+              - link "京ICP备16016397号-3" [ref=e237] [cursor=pointer]:
+                - /url: https://beian.miit.gov.cn/
+              - link "icon京公网安备 11000002002046号" [ref=e239] [cursor=pointer]:
+                - /url: http://www.beian.gov.cn/portal/registerSystemInfo
+                - img "icon" [ref=e240]
+                - text: 京公网安备 11000002002046号
+              - generic [ref=e242]: 广播电视节目制作经营许可证 （京）字第11313号
+              - generic [ref=e244]: 增值电信业务经营许可证 京B2-20170846
+              - generic [ref=e246]: 网络文化经营许可证 京网文〔2025〕0181-061号
+              - generic [ref=e248]: 互联网宗教信息服务许可证 京（2025）0000017
+              - generic [ref=e250]: 药品医疗器械网络信息服务备案 （京）网药械信息备字（2023）第00570号
+              - generic [ref=e252]: 互联网新闻信息服务许可证 11220230001
+            - generic [ref=e254]:
+              - link "网络谣言曝光台" [ref=e256] [cursor=pointer]:
+                - /url: https://www.piyao.org.cn/yybgt/index.htm
+              - link "网上有害信息举报" [ref=e258] [cursor=pointer]:
+                - /url: https://www.12377.cn/
+              - generic [ref=e260]: 违法和不良信息举报 400-140-2108
+              - generic [ref=e262]: 算法推荐专项举报 sfjubao@bytedance.com
+              - generic [ref=e264]: 网络内容从业人员违法违规行为举报 feedback@douyin.com
+              - generic [ref=e266]: 体育饭圈专项举报 tyfq@bytedance.com
+            - generic [ref=e268]:
+              - link "广告投放" [ref=e270] [cursor=pointer]:
+                - /url: https://www.oceanengine.com/resource/douyin
+              - link "用户服务协议" [ref=e272] [cursor=pointer]:
+                - /url: https://www.douyin.com/agreements/?id=6773906068725565448
+              - link "隐私政策" [ref=e274] [cursor=pointer]:
+                - /url: https://www.douyin.com/agreements/?id=6773901168964798477
+              - link "账号找回" [ref=e276] [cursor=pointer]:
+                - /url: https://www.douyin.com/recovery_account/
+              - link "联系我们" [ref=e278] [cursor=pointer]:
+                - /url: https://www.douyin.com/aboutus/
+              - link "加入我们" [ref=e280] [cursor=pointer]:
+                - /url: https://www.douyin.com/aboutus/
+              - link "营业执照" [ref=e282] [cursor=pointer]:
+                - /url: https://www.douyin.com/business_license/
+              - link "友情链接" [ref=e284] [cursor=pointer]:
+                - /url: https://www.douyin.com/friend_links
+              - link "站点地图" [ref=e286] [cursor=pointer]:
+                - /url: https://www.douyin.com/htmlmap/hotauthor_0_1
+              - link "下载抖音" [ref=e288] [cursor=pointer]:
+                - /url: https://www.douyin.com/downloadpage/pc
+              - link "抖音电商" [ref=e290] [cursor=pointer]:
+                - /url: https://mix.jinritemai.com/falcon/mix_page/index.html
+    - generic [ref=e113]:
+      - banner [ref=e116]:
+        - generic [ref=e118]:
+          - generic [ref=e122]:
+            - textbox "搜索你感兴趣的内容" [ref=e124]
+            - button "搜索" [ref=e126] [cursor=pointer]:
+              - img [ref=e127]
+              - generic [ref=e129]: 搜索
+          - generic [ref=e291]:
+            - generic [ref=e296] [cursor=pointer]:
+              - img [ref=e298]:
+                - img [ref=e299]
+              - paragraph [ref=e301]: 充钻石
+            - link "客户端" [ref=e306] [cursor=pointer]:
+              - /url: https://www.douyin.com/download/pc/obj/douyin-pc-web/douyin-pc-client/7044145585217083655/releases/357144074/7.8.0/win32-ia32/douyin-downloader-v7.8.0-win32-ia32-douyincold.exe
+              - generic [ref=e307]:
+                - generic [ref=e308]:
+                  - img [ref=e310]:
+                    - img [ref=e311]
+                  - paragraph [ref=e314]: 客户端
+                - img [ref=e316]
+            - generic [ref=e322] [cursor=pointer]:
+              - img [ref=e324]:
+                - img [ref=e325]
+              - generic [ref=e327]: 壁纸
+            - list [ref=e328]:
+              - generic [ref=e332] [cursor=pointer]:
+                - img [ref=e334]:
+                  - img [ref=e335]
+                - paragraph [ref=e338]: 通知
+            - list [ref=e339]:
+              - generic [ref=e343] [cursor=pointer]:
+                - img [ref=e345]:
+                  - img [ref=e346]
+                - paragraph [ref=e350]: 私信
+            - generic [ref=e354] [cursor=pointer]:
+              - img [ref=e356]:
+                - img [ref=e357]
+              - paragraph [ref=e359]: 投稿
+            - button "登录" [ref=e363] [cursor=pointer]:
+              - generic [ref=e364]:
+                - img [ref=e365]
+                - paragraph [ref=e368]: 登录
+      - generic [ref=e200]:
+        - generic [ref=e369]:
+          - generic [ref=e370]:
+            - generic [ref=e371]:
+              - img [ref=e373]
+              - generic [ref=e376]:
+                - generic [ref=e378]:
+                  - generic [ref=e379]:
+                    - img [ref=e382] [cursor=pointer]:
+                      - img [ref=e383]
+                    - generic [ref=e386] [cursor=pointer]:
+                      - generic [ref=e387]: 00:37
+                      - generic [ref=e388]: /
+                      - generic [ref=e389]: 01:36
+                    - img [ref=e392] [cursor=pointer]
+                    - img [ref=e397]:
+                      - img [ref=e398] [cursor=pointer]
+                  - generic [ref=e410]:
+                    - img [ref=e413] [cursor=pointer]:
+                      - img [ref=e414]
+                    - img [ref=e418] [cursor=pointer]
+                    - img [ref=e422] [cursor=pointer]:
+                      - img [ref=e423]
+                    - img [ref=e427] [cursor=pointer]:
+                      - img [ref=e428]
+                    - img [ref=e434] [cursor=pointer]
+                    - generic [ref=e437] [cursor=pointer]: 倍速
+                    - generic [ref=e440] [cursor=pointer]: 智能
+                    - generic [ref=e443] [cursor=pointer]:
+                      - button [ref=e444]
+                      - generic [ref=e445]: 清屏
+                    - generic [ref=e448] [cursor=pointer]:
+                      - button [ref=e449]
+                      - generic [ref=e450]: 连播
+                - generic [ref=e454]:
+                  - img [ref=e456]:
+                    - img [ref=e457]
+                  - img [ref=e461]:
+                    - img [ref=e462]
+                - generic [ref=e465]:
+                  - img [ref=e466]
+                  - img [ref=e467]:
+                    - img [ref=e468]
+              - generic:
+                - generic:
+                  - generic:
+                    - generic [ref=e472]:
+                      - generic [ref=e474]: 章节要点
+                      - img
+                    - generic:
+                      - generic [ref=e476]: 亏损表明经营逻辑、战略方向、客户群体和销售路径错误。现金流正向至关重要，试错需在理论和逻辑上正确。团队信心和客户信任度对店铺成功至关重要。在错误道路上坚持只会导致更大损失，应重新梳理并做出正确决策。
+                      - generic:
+                        - generic [ref=e477] [cursor=pointer]:
+                          - generic:
+                            - img [ref=e1695]
+                            - generic [ref=e478]: 00:03
+                            - generic: 亏损的原因
+                          - generic [ref=e479]:
+                            - paragraph: 亏损意味着经营逻辑、战略方向、客户群体和销售路径错误。
+                        - generic [ref=e480] [cursor=pointer]:
+                          - generic:
+                            - img [ref=e1697]
+                            - generic [ref=e484]: 00:17
+                            - generic: 现金流的重要性
+                          - generic [ref=e485]:
+                            - paragraph: 现金流正向至关重要，否则销售策略无效。
+                        - generic [ref=e486] [cursor=pointer]:
+                          - generic:
+                            - generic [ref=e490]: 00:26
+                            - generic: 试错的前提
+                          - generic [ref=e491]:
+                            - paragraph: 试错需在理论和逻辑上正确，财报数据已验证错误。
+                        - generic [ref=e492] [cursor=pointer]:
+                          - generic:
+                            - img [ref=e494]
+                            - generic [ref=e496]: 00:46
+                            - generic: 团队的信心
+                          - generic [ref=e497]:
+                            - paragraph: 团队信心至关重要，否则难以盈利。
+                        - generic [ref=e498] [cursor=pointer]:
+                          - generic:
+                            - img [ref=e500]
+                            - generic [ref=e502]: 01:02
+                            - generic: 坚持的后果
+                          - generic [ref=e503]:
+                            - paragraph: 坚持可能导致员工频繁更换，顾客信任度降低。
+                        - generic [ref=e504] [cursor=pointer]:
+                          - generic:
+                            - img [ref=e506]
+                            - generic [ref=e508]: 01:19
+                            - generic: 重新梳理
+                          - generic [ref=e509]:
+                            - paragraph: 重新梳理客户群体定位、品牌定位、战略方向和运营体系，或及时止损。
+                      - generic [ref=e511]: 内容由AI生成
+            - generic [ref=e513]:
+              - 'heading "亏钱就是你有问题，结果是不会骗人的。#美业 #创业 #新美业 #美业老板 #认知思维" [level=1] [ref=e516]':
+                - generic [ref=e519]:
+                  - generic [ref=e522]: 亏钱就是你有问题，结果是不会骗人的。
+                  - link "#美业" [ref=e524] [cursor=pointer]:
+                    - /url: //www.douyin.com/search/%E7%BE%8E%E4%B8%9A?enter_from=video_detail&source=pc_click_hashtag_feed
+                  - link "#创业" [ref=e529] [cursor=pointer]:
+                    - /url: //www.douyin.com/search/%E5%88%9B%E4%B8%9A?enter_from=video_detail&source=pc_click_hashtag_feed
+                  - link "#新美业" [ref=e534] [cursor=pointer]:
+                    - /url: //www.douyin.com/search/%E6%96%B0%E7%BE%8E%E4%B8%9A?enter_from=video_detail&source=pc_click_hashtag_feed
+                  - link "#美业老板" [ref=e539] [cursor=pointer]:
+                    - /url: //www.douyin.com/search/%E7%BE%8E%E4%B8%9A%E8%80%81%E6%9D%BF?enter_from=video_detail&source=pc_click_hashtag_feed
+                  - link "#认知思维" [ref=e544] [cursor=pointer]:
+                    - /url: //www.douyin.com/search/%E8%AE%A4%E7%9F%A5%E6%80%9D%E7%BB%B4?enter_from=video_detail&source=pc_click_hashtag_feed
+              - generic [ref=e545]:
+                - generic [ref=e546]:
+                  - generic [ref=e547] [cursor=pointer]:
+                    - img [ref=e550]
+                    - generic [ref=e558]: "16"
+                  - generic [ref=e559] [cursor=pointer]:
+                    - img [ref=e562]
+                    - generic [ref=e567]: "12"
+                  - generic [ref=e568] [cursor=pointer]:
+                    - img [ref=e571]
+                    - generic [ref=e580]: "14"
+                  - generic [ref=e581] [cursor=pointer]:
+                    - img [ref=e584]
+                    - generic [ref=e589]: "6"
+                - generic [ref=e590]:
+                  - generic [ref=e591] [cursor=pointer]:
+                    - img [ref=e592]
+                    - generic [ref=e594]: 举报
+                  - generic [ref=e595]: 发布时间：2026-06-04 16:00
+            - generic [ref=e598]:
+              - generic [ref=e599]:
+                - generic [ref=e601]: 全部评论
+                - generic [ref=e604]:
+                  - img [ref=e607] [cursor=pointer]
+                  - generic [ref=e616] [cursor=pointer]: 请先登录后发表评论
+              - generic [ref=e617]:
+                - generic [ref=e622]:
+                  - generic [ref=e623]:
+                    - generic [ref=e624]:
+                      - link "你这个蠢货" [ref=e627] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAemyJdjJDw2Xv5yEcvXeu_uWcjpoICv9X5NeRf2KDJ_g
+                        - generic [ref=e633]: 你这个蠢货
+                      - generic [ref=e635]: ...
+                    - generic [ref=e642]:
+                      - text: 真的是让人振聋发聩，犹如醍醐灌顶！一棒子给我敲醒了
+                      - img "[赞]" [ref=e643]
+                    - generic [ref=e644]: 17分钟前·北京
+                    - generic [ref=e646]:
+                      - generic [ref=e647]:
+                        - paragraph [ref=e648] [cursor=pointer]:
+                          - img [ref=e649]
+                          - generic [ref=e651]: "0"
+                        - paragraph [ref=e652] [cursor=pointer]:
+                          - img [ref=e653]
+                      - generic [ref=e656] [cursor=pointer]:
+                        - img [ref=e657]
+                        - generic [ref=e659]: 分享
+                      - generic [ref=e661] [cursor=pointer]:
+                        - img [ref=e662]
+                        - generic [ref=e664]: 回复
+                  - generic [ref=e670]:
+                    - generic [ref=e671]:
+                      - link "北麒 Boss堂 作者" [ref=e674] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAnxUD171bECbT7Y4B9D52Dz8Jw5iAxcsacyRuoCMUX6r-8iBuL-nVHxaEmV09ff9I
+                        - generic [ref=e680]: 北麒 Boss堂
+                        - generic [ref=e683]: 作者
+                      - generic [ref=e685]: ...
+                    - generic [ref=e692]:
+                      - text: 感谢认可
+                      - img "[偷笑]" [ref=e693]
+                    - generic [ref=e694]: 11分钟前·北京
+                    - generic [ref=e696]:
+                      - generic [ref=e697]:
+                        - paragraph [ref=e698] [cursor=pointer]:
+                          - img [ref=e699]
+                          - generic [ref=e701]: "0"
+                        - paragraph [ref=e702] [cursor=pointer]:
+                          - img [ref=e703]
+                      - generic [ref=e706] [cursor=pointer]:
+                        - img [ref=e707]
+                        - generic [ref=e709]: 分享
+                      - generic [ref=e711] [cursor=pointer]:
+                        - img [ref=e712]
+                        - generic [ref=e714]: 回复
+                - generic [ref=e719]:
+                  - generic [ref=e720]:
+                    - generic [ref=e721]:
+                      - link "北麒" [ref=e724] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAA9jgPBExqxN9cJsFnXdkuC81lUT0V95fNQifMCjtEpZo
+                        - generic [ref=e730]: 北麒
+                      - generic [ref=e732]: ...
+                    - generic [ref=e739]:
+                      - text: 说得好，领导者最主要是领导方向要大致对，在过程中去修正，如果是方向反了，越努力越错
+                      - img "[鼓掌]" [ref=e740]
+                      - img "[鼓掌]" [ref=e741]
+                      - img "[鼓掌]" [ref=e742]
+                    - generic [ref=e743]: 12分钟前·北京
+                    - generic [ref=e745]:
+                      - generic [ref=e746]:
+                        - paragraph [ref=e747] [cursor=pointer]:
+                          - img [ref=e748]
+                          - generic [ref=e750]: "0"
+                        - paragraph [ref=e751] [cursor=pointer]:
+                          - img [ref=e752]
+                      - generic [ref=e755] [cursor=pointer]:
+                        - img [ref=e756]
+                        - generic [ref=e758]: 分享
+                      - generic [ref=e760] [cursor=pointer]:
+                        - img [ref=e761]
+                        - generic [ref=e763]: 回复
+                  - generic [ref=e769]:
+                    - generic [ref=e770]:
+                      - link "北麒 Boss堂 作者" [ref=e773] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAnxUD171bECbT7Y4B9D52Dz8Jw5iAxcsacyRuoCMUX6r-8iBuL-nVHxaEmV09ff9I
+                        - generic [ref=e779]: 北麒 Boss堂
+                        - generic [ref=e782]: 作者
+                      - generic [ref=e784]: ...
+                    - generic [ref=e791]:
+                      - text: 课代表
+                      - img "[偷笑]" [ref=e792]
+                    - generic [ref=e793]: 10分钟前·北京
+                    - generic [ref=e795]:
+                      - generic [ref=e796]:
+                        - paragraph [ref=e797] [cursor=pointer]:
+                          - img [ref=e798]
+                          - generic [ref=e800]: "0"
+                        - paragraph [ref=e801] [cursor=pointer]:
+                          - img [ref=e802]
+                      - generic [ref=e805] [cursor=pointer]:
+                        - img [ref=e806]
+                        - generic [ref=e808]: 分享
+                      - generic [ref=e810] [cursor=pointer]:
+                        - img [ref=e811]
+                        - generic [ref=e813]: 回复
+                - generic [ref=e818]:
+                  - generic [ref=e819]:
+                    - generic [ref=e820]:
+                      - link "多多&多米" [ref=e823] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAABVqV2gR-yznbvNI_GBjN42B5GalcCK4lJRZuT93CYfChTcQUy6luvjPo_lLMqPwz
+                        - generic [ref=e829]: 多多&多米
+                      - generic [ref=e831]: ...
+                    - generic [ref=e838]: 说的对，战略方向错了，越努力越亏钱，及时止损，马上调整策略
+                    - generic [ref=e839]: 24分钟前·北京
+                    - generic [ref=e841]:
+                      - generic [ref=e842]:
+                        - paragraph [ref=e843] [cursor=pointer]:
+                          - img [ref=e844]
+                          - generic [ref=e846]: "0"
+                        - paragraph [ref=e847] [cursor=pointer]:
+                          - img [ref=e848]
+                      - generic [ref=e851] [cursor=pointer]:
+                        - img [ref=e852]
+                        - generic [ref=e854]: 分享
+                      - generic [ref=e856] [cursor=pointer]:
+                        - img [ref=e857]
+                        - generic [ref=e859]: 回复
+                  - generic [ref=e865]:
+                    - generic [ref=e866]:
+                      - link "北麒 Boss堂 作者" [ref=e869] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAnxUD171bECbT7Y4B9D52Dz8Jw5iAxcsacyRuoCMUX6r-8iBuL-nVHxaEmV09ff9I
+                        - generic [ref=e875]: 北麒 Boss堂
+                        - generic [ref=e878]: 作者
+                      - generic [ref=e880]: ...
+                    - generic [ref=e887]:
+                      - text: 目标不对 努力白费
+                      - img "[呲牙]" [ref=e888]
+                    - generic [ref=e889]: 12分钟前·北京
+                    - generic [ref=e891]:
+                      - generic [ref=e892]:
+                        - paragraph [ref=e893] [cursor=pointer]:
+                          - img [ref=e894]
+                          - generic [ref=e896]: "0"
+                        - paragraph [ref=e897] [cursor=pointer]:
+                          - img [ref=e898]
+                      - generic [ref=e901] [cursor=pointer]:
+                        - img [ref=e902]
+                        - generic [ref=e904]: 分享
+                      - generic [ref=e906] [cursor=pointer]:
+                        - img [ref=e907]
+                        - generic [ref=e909]: 回复
+                - generic [ref=e914]:
+                  - generic [ref=e915]:
+                    - generic [ref=e916]:
+                      - link "知返" [ref=e919] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAUWPwdxd7JJwP-OmImQy-v1OsVhBIbIy9QxtITepj_6yP9munUzqvpsTpr7pbJm-Y
+                        - generic [ref=e925]: 知返
+                      - generic [ref=e927]: ...
+                    - generic [ref=e934]:
+                      - text: 亏了我还在幻想能复活
+                      - img "[尬笑]" [ref=e935]
+                    - generic [ref=e936]: 18分钟前·北京
+                    - generic [ref=e938]:
+                      - generic [ref=e939]:
+                        - paragraph [ref=e940] [cursor=pointer]:
+                          - img [ref=e941]
+                          - generic [ref=e943]: "0"
+                        - paragraph [ref=e944] [cursor=pointer]:
+                          - img [ref=e945]
+                      - generic [ref=e948] [cursor=pointer]:
+                        - img [ref=e949]
+                        - generic [ref=e951]: 分享
+                      - generic [ref=e953] [cursor=pointer]:
+                        - img [ref=e954]
+                        - generic [ref=e956]: 回复
+                  - generic [ref=e962]:
+                    - generic [ref=e963]:
+                      - link "北麒 Boss堂 作者" [ref=e966] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAnxUD171bECbT7Y4B9D52Dz8Jw5iAxcsacyRuoCMUX6r-8iBuL-nVHxaEmV09ff9I
+                        - generic [ref=e972]: 北麒 Boss堂
+                        - generic [ref=e975]: 作者
+                      - generic [ref=e977]: ...
+                    - generic [ref=e984]: 可以试试看广告能不能复活
+                    - generic [ref=e985]: 12分钟前·北京
+                    - generic [ref=e987]:
+                      - generic [ref=e988]:
+                        - paragraph [ref=e989] [cursor=pointer]:
+                          - img [ref=e990]
+                          - generic [ref=e992]: "0"
+                        - paragraph [ref=e993] [cursor=pointer]:
+                          - img [ref=e994]
+                      - generic [ref=e997] [cursor=pointer]:
+                        - img [ref=e998]
+                        - generic [ref=e1000]: 分享
+                      - generic [ref=e1002] [cursor=pointer]:
+                        - img [ref=e1003]
+                        - generic [ref=e1005]: 回复
+                - generic [ref=e1010]:
+                  - generic [ref=e1011]:
+                    - generic [ref=e1012]:
+                      - link "用户6208496891127" [ref=e1015] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAA9hbkdFCMdFcTYd2gfPqp3-GgVMni6OY9A7LhKhpT0QXjfyzGwvxpX-M_9sUUjxv6
+                        - generic [ref=e1021]: 用户6208496891127
+                      - generic [ref=e1023]: ...
+                    - generic [ref=e1030]: 老师什么时候开课 想听
+                    - generic [ref=e1031]: 13分钟前·北京
+                    - generic [ref=e1033]:
+                      - generic [ref=e1034]:
+                        - paragraph [ref=e1035] [cursor=pointer]:
+                          - img [ref=e1036]
+                          - generic [ref=e1038]: "0"
+                        - paragraph [ref=e1039] [cursor=pointer]:
+                          - img [ref=e1040]
+                      - generic [ref=e1043] [cursor=pointer]:
+                        - img [ref=e1044]
+                        - generic [ref=e1046]: 分享
+                      - generic [ref=e1048] [cursor=pointer]:
+                        - img [ref=e1049]
+                        - generic [ref=e1051]: 回复
+                  - generic [ref=e1057]:
+                    - generic [ref=e1058]:
+                      - link "北麒 Boss堂 作者" [ref=e1061] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAnxUD171bECbT7Y4B9D52Dz8Jw5iAxcsacyRuoCMUX6r-8iBuL-nVHxaEmV09ff9I
+                        - generic [ref=e1067]: 北麒 Boss堂
+                        - generic [ref=e1070]: 作者
+                      - generic [ref=e1072]: ...
+                    - generic [ref=e1079]:
+                      - text: 每个月中旬都有的
+                      - img "[呲牙]" [ref=e1080]
+                    - generic [ref=e1081]: 11分钟前·北京
+                    - generic [ref=e1083]:
+                      - generic [ref=e1084]:
+                        - paragraph [ref=e1085] [cursor=pointer]:
+                          - img [ref=e1086]
+                          - generic [ref=e1088]: "0"
+                        - paragraph [ref=e1089] [cursor=pointer]:
+                          - img [ref=e1090]
+                      - generic [ref=e1093] [cursor=pointer]:
+                        - img [ref=e1094]
+                        - generic [ref=e1096]: 分享
+                      - generic [ref=e1098] [cursor=pointer]:
+                        - img [ref=e1099]
+                        - generic [ref=e1101]: 回复
+                - generic [ref=e1106]:
+                  - generic [ref=e1107]:
+                    - generic [ref=e1108]:
+                      - link "黄凯" [ref=e1111] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAfIL0ujavEABvc_GgBF_B0lrWHZZ8dSFkMYzfUTcRp38
+                        - generic [ref=e1117]: 黄凯
+                      - generic [ref=e1119]: ...
+                    - generic [ref=e1126]:
+                      - img "[赞]" [ref=e1127]
+                      - img "[赞]" [ref=e1128]
+                      - img "[赞]" [ref=e1129]
+                    - generic [ref=e1130]: 46分钟前·山东
+                    - generic [ref=e1132]:
+                      - generic [ref=e1133]:
+                        - paragraph [ref=e1134] [cursor=pointer]:
+                          - img [ref=e1135]
+                          - generic [ref=e1137]: "0"
+                        - paragraph [ref=e1138] [cursor=pointer]:
+                          - img [ref=e1139]
+                      - generic [ref=e1142] [cursor=pointer]:
+                        - img [ref=e1143]
+                        - generic [ref=e1145]: 分享
+                      - generic [ref=e1147] [cursor=pointer]:
+                        - img [ref=e1148]
+                        - generic [ref=e1150]: 回复
+                  - generic [ref=e1156]:
+                    - generic [ref=e1157]:
+                      - link "北麒 Boss堂 作者" [ref=e1160] [cursor=pointer]:
+                        - /url: //www.douyin.com/user/MS4wLjABAAAAnxUD171bECbT7Y4B9D52Dz8Jw5iAxcsacyRuoCMUX6r-8iBuL-nVHxaEmV09ff9I
+                        - generic [ref=e1166]: 北麒 Boss堂
+                        - generic [ref=e1169]: 作者
+                      - generic [ref=e1171]: ...
+                    - img "[呲牙]" [ref=e1179]
+                    - generic [ref=e1180]: 12分钟前·北京
+                    - generic [ref=e1182]:
+                      - generic [ref=e1183]:
+                        - paragraph [ref=e1184] [cursor=pointer]:
+                          - img [ref=e1185]
+                          - generic [ref=e1187]: "0"
+                        - paragraph [ref=e1188] [cursor=pointer]:
+                          - img [ref=e1189]
+                      - generic [ref=e1192] [cursor=pointer]:
+                        - img [ref=e1193]
+                        - generic [ref=e1195]: 分享
+                      - generic [ref=e1197] [cursor=pointer]:
+                        - img [ref=e1198]
+                        - generic [ref=e1200]: 回复
+                - generic [ref=e1201]: 暂时没有更多评论
+                - generic [ref=e1202]:
+                  - generic [ref=e1203]: 登录后即可参与互动讨论
+                  - button "立即登录" [ref=e1205] [cursor=pointer]:
+                    - generic [ref=e1206]: 立即登录
+          - generic [ref=e1208]:
+            - generic [ref=e1209]:
+              - link "北麒 Boss堂" [ref=e1212] [cursor=pointer]:
+                - /url: //www.douyin.com/user/MS4wLjABAAAAnxUD171bECbT7Y4B9D52Dz8Jw5iAxcsacyRuoCMUX6r-8iBuL-nVHxaEmV09ff9I
+                - listitem [ref=e1213]:
+                  - img "北麒 Boss堂" [ref=e1214]
+              - generic [ref=e1215]:
+                - link "北麒 Boss堂" [ref=e1216] [cursor=pointer]:
+                  - /url: //www.douyin.com/user/MS4wLjABAAAAnxUD171bECbT7Y4B9D52Dz8Jw5iAxcsacyRuoCMUX6r-8iBuL-nVHxaEmV09ff9I
+                  - generic [ref=e1222]: 北麒 Boss堂
+                - paragraph [ref=e1223]: 粉丝5.1万获赞2.7万
+              - button "关注" [ref=e1225] [cursor=pointer]:
+                - generic [ref=e1226]: 关注
+            - generic [ref=e1228]:
+              - heading "推荐视频" [level=2] [ref=e1230]
+              - list [ref=e1231]:
+                - listitem [ref=e1232]:
+                  - generic [ref=e1233]:
+                    - 'link "交贵人的核心，敢吃小亏才能盈利#宋闲 #职场那些事 #每天跟我涨知识 05:25" [ref=e1235] [cursor=pointer]':
+                      - /url: //www.douyin.com/video/7619947035316062386
+                      - 'img "交贵人的核心，敢吃小亏才能盈利#宋闲 #职场那些事 #每天跟我涨知识" [ref=e1239]'
+                      - generic [ref=e1241]: 05:25
+                    - generic [ref=e1242]:
+                      - 'heading "交贵人的核心，敢吃小亏才能盈利#宋闲 #职场那些事 #每天跟我涨知识" [level=3] [ref=e1243]':
+                        - 'link "交贵人的核心，敢吃小亏才能盈利#宋闲 #职场那些事 #每天跟我涨知识" [ref=e1244] [cursor=pointer]':
+                          - /url: //www.douyin.com/video/7619947035316062386
+                          - generic [ref=e1249]: "交贵人的核心，敢吃小亏才能盈利#宋闲 #职场那些事 #每天跟我涨知识"
+                      - generic [ref=e1250]:
+                        - generic [ref=e1251]:
+                          - img [ref=e1252]
+                          - text: 1.8万
+                        - link "宋闲谈职场" [ref=e1255] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAAPatB5_9060ievuJwLM74ksOOh204OQxJ1AX363Rn1eSEyijjv8kR87Sc3BImj_zk?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1260]: 宋闲谈职场
+                - listitem [ref=e1261]:
+                  - generic [ref=e1262]:
+                    - link "大家说说到底在哪#美业#皮肤管理#护肤#美容院 00:15" [ref=e1264] [cursor=pointer]:
+                      - /url: //www.douyin.com/video/7622685552014841963
+                      - img "大家说说到底在哪#美业#皮肤管理#护肤#美容院" [ref=e1268]
+                      - generic [ref=e1270]: 00:15
+                    - generic [ref=e1271]:
+                      - heading "大家说说到底在哪#美业#皮肤管理#护肤#美容院" [level=3] [ref=e1272]:
+                        - link "大家说说到底在哪#美业#皮肤管理#护肤#美容院" [ref=e1273] [cursor=pointer]:
+                          - /url: //www.douyin.com/video/7622685552014841963
+                          - generic [ref=e1278]: 大家说说到底在哪#美业#皮肤管理#护肤#美容院
+                      - generic [ref=e1279]:
+                        - generic [ref=e1280]:
+                          - img [ref=e1281]
+                          - text: "4777"
+                        - link "简玺院长教面诊成交" [ref=e1284] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAALFyZSYIGQszi8MegpCGX-fdTxIcccOGPZrOiIzSKtls?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1289]: 简玺院长教面诊成交
+                - listitem [ref=e1290]:
+                  - generic [ref=e1291]:
+                    - 'link "凡是生意能做大的都懂得一个道理 #财富 #认知 #商业思维 #思维 #财经 00:32" [ref=e1293] [cursor=pointer]':
+                      - /url: //www.douyin.com/video/7618117127651855658
+                      - 'img "凡是生意能做大的都懂得一个道理 #财富 #认知 #商业思维 #思维 #财经" [ref=e1297]'
+                      - generic [ref=e1299]: 00:32
+                    - generic [ref=e1300]:
+                      - 'heading "凡是生意能做大的都懂得一个道理 #财富 #认知 #商业思维 #思维 #财经" [level=3] [ref=e1301]':
+                        - 'link "凡是生意能做大的都懂得一个道理 #财富 #认知 #商业思维 #思维 #财经" [ref=e1302] [cursor=pointer]':
+                          - /url: //www.douyin.com/video/7618117127651855658
+                          - generic [ref=e1307]: "凡是生意能做大的都懂得一个道理 #财富 #认知 #商业思维 #思维 #财经"
+                      - generic [ref=e1308]:
+                        - generic [ref=e1309]:
+                          - img [ref=e1310]
+                          - text: 7.5万
+                        - link "程雪峰" [ref=e1313] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAAJJ1ZbIBTh8vXfRnHweyLUy4tukkPHw-BCBI_8mcfi9Rr1oYaylRBK_a-TQwbw2rS?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1318]: 程雪峰
+                - listitem [ref=e1319]:
+                  - generic [ref=e1320]:
+                    - 'link "优质赛道背后的投资逻辑 #商业思维 #认知 #财富 #投资 03:37" [ref=e1322] [cursor=pointer]':
+                      - /url: //www.douyin.com/video/7637123267832073524
+                      - 'img "优质赛道背后的投资逻辑 #商业思维 #认知 #财富 #投资" [ref=e1326]'
+                      - generic [ref=e1328]: 03:37
+                    - generic [ref=e1329]:
+                      - 'heading "优质赛道背后的投资逻辑 #商业思维 #认知 #财富 #投资" [level=3] [ref=e1330]':
+                        - 'link "优质赛道背后的投资逻辑 #商业思维 #认知 #财富 #投资" [ref=e1331] [cursor=pointer]':
+                          - /url: //www.douyin.com/video/7637123267832073524
+                          - generic [ref=e1336]: "优质赛道背后的投资逻辑 #商业思维 #认知 #财富 #投资"
+                      - generic [ref=e1337]:
+                        - generic [ref=e1338]:
+                          - img [ref=e1339]
+                          - text: "7055"
+                        - link "峰哥财富智慧" [ref=e1342] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAA6JFLCkQ6BUaBK4DZUBTWEw8QptcGVc45pq_8s-LEhm8tL3ZdKfaBt9NtkfUNL4tg?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1347]: 峰哥财富智慧
+                - listitem [ref=e1348]:
+                  - generic [ref=e1349]:
+                    - 'link "生意成功的秘诀离不开这3句话！#商业思维 #生意 #实体老板 #人性 00:47" [ref=e1351] [cursor=pointer]':
+                      - /url: //www.douyin.com/video/7634490571305913654
+                      - 'img "生意成功的秘诀离不开这3句话！#商业思维 #生意 #实体老板 #人性" [ref=e1355]'
+                      - generic [ref=e1357]: 00:47
+                    - generic [ref=e1358]:
+                      - 'heading "生意成功的秘诀离不开这3句话！#商业思维 #生意 #实体老板 #人性" [level=3] [ref=e1359]':
+                        - 'link "生意成功的秘诀离不开这3句话！#商业思维 #生意 #实体老板 #人性" [ref=e1360] [cursor=pointer]':
+                          - /url: //www.douyin.com/video/7634490571305913654
+                          - generic [ref=e1365]: "生意成功的秘诀离不开这3句话！#商业思维 #生意 #实体老板 #人性"
+                      - generic [ref=e1366]:
+                        - generic [ref=e1367]:
+                          - img [ref=e1368]
+                          - text: 10.9万
+                        - link "仙大-实体赋能" [ref=e1371] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAAfcIWbId2kpvhYH75NoOvlsX1QnEsVRMJY6fdRHm30ck?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1376]: 仙大-实体赋能
+                - listitem [ref=e1377]:
+                  - generic [ref=e1378]:
+                    - 'link "我用极致服务，换来了1.5亿的生意！ #老纪 #服务思维 #创业者 #商业思维 07:13" [ref=e1380] [cursor=pointer]':
+                      - /url: //www.douyin.com/video/7628972286770416938
+                      - 'img "我用极致服务，换来了1.5亿的生意！ #老纪 #服务思维 #创业者 #商业思维" [ref=e1384]'
+                      - generic [ref=e1386]: 07:13
+                    - generic [ref=e1387]:
+                      - 'heading "我用极致服务，换来了1.5亿的生意！ #老纪 #服务思维 #创业者 #商业思维" [level=3] [ref=e1388]':
+                        - 'link "我用极致服务，换来了1.5亿的生意！ #老纪 #服务思维 #创业者 #商业思维" [ref=e1389] [cursor=pointer]':
+                          - /url: //www.douyin.com/video/7628972286770416938
+                          - generic [ref=e1394]: "我用极致服务，换来了1.5亿的生意！ #老纪 #服务思维 #创业者 #商业思维"
+                      - generic [ref=e1395]:
+                        - generic [ref=e1396]:
+                          - img [ref=e1397]
+                          - text: "8207"
+                        - link "纪先生丨极致服务" [ref=e1400] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAANVig1fe8VChEsgHyLTPoVkfBzgH7t6Jm_tX3eIf4ikpmX5vr53tsx8Z-i04HX0dv?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1405]: 纪先生丨极致服务
+                - listitem [ref=e1406]:
+                  - generic [ref=e1407]:
+                    - link "富人的顶级智性思维“空”，成功的最关键的一步 01:33" [ref=e1409] [cursor=pointer]:
+                      - /url: //www.douyin.com/video/7626321756596366321
+                      - img "富人的顶级智性思维“空”，成功的最关键的一步" [ref=e1413]
+                      - generic [ref=e1415]: 01:33
+                    - generic [ref=e1416]:
+                      - heading "富人的顶级智性思维“空”，成功的最关键的一步" [level=3] [ref=e1417]:
+                        - link "富人的顶级智性思维“空”，成功的最关键的一步" [ref=e1418] [cursor=pointer]:
+                          - /url: //www.douyin.com/video/7626321756596366321
+                          - generic [ref=e1423]: 富人的顶级智性思维“空”，成功的最关键的一步
+                      - generic [ref=e1424]:
+                        - generic [ref=e1425]:
+                          - img [ref=e1426]
+                          - text: 2.6万
+                        - link "蛟哥" [ref=e1429] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAAM5UpxCKMWhqkruE5GTrnn4jhXY8xKvonxxfDxXKjaZ4?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1434]: 蛟哥
+                - listitem [ref=e1435]:
+                  - generic [ref=e1436]:
+                    - 'link "门店老带新没结果 六个步骤让你老带新的成交率翻倍#经营管理 #新美业 03:20" [ref=e1438] [cursor=pointer]':
+                      - /url: //www.douyin.com/video/7617072609343065380
+                      - 'img "门店老带新没结果 六个步骤让你老带新的成交率翻倍#经营管理 #新美业" [ref=e1442]'
+                      - generic [ref=e1444]: 03:20
+                    - generic [ref=e1445]:
+                      - 'heading "门店老带新没结果 六个步骤让你老带新的成交率翻倍#经营管理 #新美业" [level=3] [ref=e1446]':
+                        - 'link "门店老带新没结果 六个步骤让你老带新的成交率翻倍#经营管理 #新美业" [ref=e1447] [cursor=pointer]':
+                          - /url: //www.douyin.com/video/7617072609343065380
+                          - generic [ref=e1452]: "门店老带新没结果 六个步骤让你老带新的成交率翻倍#经营管理 #新美业"
+                      - generic [ref=e1453]:
+                        - generic [ref=e1454]:
+                          - img [ref=e1455]
+                          - text: 3.5万
+                        - link "张晨美业门店咨询" [ref=e1458] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAANMrzkImHZpZyn_gMgBlh6kiUiafiMOtmI3j4WLt4K3i1IU9EdByJaDXy6uhkevB1?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1463]: 张晨美业门店咨询
+                - listitem [ref=e1464]:
+                  - generic [ref=e1465]:
+                    - 'link "教员思想的第一性原理让我毛骨悚然，豁然开朗，看懂了你就知道人究竟是怎么成功的！#商业思维 #老板思维 #认知 #创业 #干货分享 07:54" [ref=e1467] [cursor=pointer]':
+                      - /url: //www.douyin.com/video/7627042946050805011
+                      - 'img "教员思想的第一性原理让我毛骨悚然，豁然开朗，看懂了你就知道人究竟是怎么成功的！#商业思维 #老板思维 #认知 #创业 #干货分享" [ref=e1471]'
+                      - generic [ref=e1473]: 07:54
+                    - generic [ref=e1474]:
+                      - 'heading "教员思想的第一性原理让我毛骨悚然，豁然开朗，看懂了你就知道人究竟是怎么成功的！#商业思维 #老板思维 #认知 #创业 #干货分享" [level=3] [ref=e1475]':
+                        - 'link "教员思想的第一性原理让我毛骨悚然，豁然开朗，看懂了你就知道人究竟是怎么成功的！#商业思维 #老板思维 #认知 #创业 #干货分享" [ref=e1476] [cursor=pointer]':
+                          - /url: //www.douyin.com/video/7627042946050805011
+                          - generic [ref=e1481]: "教员思想的第一性原理让我毛骨悚然，豁然开朗，看懂了你就知道人究竟是怎么成功的！#商业思维 #老板思维 #认知 #创业 #干货分享"
+                      - generic [ref=e1482]:
+                        - generic [ref=e1483]:
+                          - img [ref=e1484]
+                          - text: "2970"
+                        - link "刘宇-树家医学" [ref=e1487] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAAmnQMZiOaY3WSDMYNyv58QipRiowRdH7QvIPslsUKjaxG_iLpt2qQlzaCq8NzMI_5?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1492]: 刘宇-树家医学
+                - listitem [ref=e1493]:
+                  - generic [ref=e1494]:
+                    - 'link "做教培这行真的不必纠结#教培行业 #培训机构 #教培机构运营 #培训机构运营 #教培人 00:22" [ref=e1496] [cursor=pointer]':
+                      - /url: //www.douyin.com/video/7614108719157283698
+                      - 'img "做教培这行真的不必纠结#教培行业 #培训机构 #教培机构运营 #培训机构运营 #教培人" [ref=e1500]'
+                      - generic [ref=e1502]: 00:22
+                    - generic [ref=e1503]:
+                      - 'heading "做教培这行真的不必纠结#教培行业 #培训机构 #教培机构运营 #培训机构运营 #教培人" [level=3] [ref=e1504]':
+                        - 'link "做教培这行真的不必纠结#教培行业 #培训机构 #教培机构运营 #培训机构运营 #教培人" [ref=e1505] [cursor=pointer]':
+                          - /url: //www.douyin.com/video/7614108719157283698
+                          - generic [ref=e1510]: "做教培这行真的不必纠结#教培行业 #培训机构 #教培机构运营 #培训机构运营 #教培人"
+                      - generic [ref=e1511]:
+                        - generic [ref=e1512]:
+                          - img [ref=e1513]
+                          - text: 1.3万
+                        - link "我是冯童" [ref=e1516] [cursor=pointer]:
+                          - /url: //www.douyin.com/user/MS4wLjABAAAAoEFhr0kxID5scJBI5ENH2n-U4_fB9LQEnXePZkxT55c?author_id=2737159156018275&enter_from=video_detail&enter_method=video_cover_title&from_tab_name=main&group_id=7647040725091241235&log_pb=%7B%22impr_id%22%3A%22202606041751071076CCA986B0B9DC6525%22%7D&relation=0
+                          - generic [ref=e1521]: 我是冯童
+        - contentinfo [ref=e205]:
+          - generic [ref=e206]:
+            - generic [ref=e1522]:
+              - link "广告投放" [ref=e1524] [cursor=pointer]:
+                - /url: https://www.oceanengine.com/resource/douyin
+              - link "用户服务协议" [ref=e1526] [cursor=pointer]:
+                - /url: https://www.douyin.com/agreements/?id=6773906068725565448
+              - link "隐私政策" [ref=e1528] [cursor=pointer]:
+                - /url: https://www.douyin.com/agreements/?id=6773901168964798477
+              - link "账号找回" [ref=e1530] [cursor=pointer]:
+                - /url: https://www.douyin.com/recovery_account/
+              - link "联系我们" [ref=e1532] [cursor=pointer]:
+                - /url: https://www.douyin.com/aboutus/
+              - link "加入我们" [ref=e1534] [cursor=pointer]:
+                - /url: https://www.douyin.com/aboutus/
+              - link "营业执照" [ref=e1536] [cursor=pointer]:
+                - /url: https://www.douyin.com/business_license/
+              - link "友情链接" [ref=e1538] [cursor=pointer]:
+                - /url: https://www.douyin.com/friend_links
+              - link "站点地图" [ref=e1540] [cursor=pointer]:
+                - /url: https://www.douyin.com/htmlmap/hotauthor_0_1
+              - link "下载抖音" [ref=e1542] [cursor=pointer]:
+                - /url: https://www.douyin.com/downloadpage/pc
+              - link "抖音电商" [ref=e1544] [cursor=pointer]:
+                - /url: https://mix.jinritemai.com/falcon/mix_page/index.html
+            - generic [ref=e1545]:
+              - link "网络谣言曝光台 ｜" [ref=e1547] [cursor=pointer]:
+                - /url: https://www.piyao.org.cn/yybgt/index.htm
+              - link "网上有害信息举报" [ref=e1549] [cursor=pointer]:
+                - /url: https://www.12377.cn/
+              - generic [ref=e1550]: ｜ 违法和不良信息举报：400-140-2108 ｜ 算法推荐专项举报：sfjubao@bytedance.com ｜ 网络内容从业人员违法违规行为举报：feedback@douyin.com | 体育饭圈专项举报：tyfq@bytedance.com
+            - generic [ref=e1551]:
+              - link "京ICP备16016397号-3" [ref=e1553] [cursor=pointer]:
+                - /url: https://beian.miit.gov.cn/
+              - generic [ref=e1554]: ｜ 广播电视节目制作经营许可证 （京）字第11313号
+              - generic [ref=e1555]: ｜ 增值电信业务经营许可证 京B2-20170846
+              - generic [ref=e1556]: ｜ 网络文化经营许可证 京网文〔2025〕0181-061号 ｜
+              - generic [ref=e1557]:
+                - img "icon" [ref=e1558]
+                - link "京公网安备 11000002002046号" [ref=e1559] [cursor=pointer]:
+                  - /url: http://www.beian.gov.cn/portal/registerSystemInfo
+              - generic [ref=e1560]: ｜ 互联网宗教信息服务许可证 京（2025）0000017
+            - generic [ref=e1561]:
+              - generic [ref=e1563]: 热门：
+              - link "抖音二次元" [ref=e1565] [cursor=pointer]:
+                - /url: https://www.douyin.com/jingxuan/acg
+              - link "抖音游戏" [ref=e1567] [cursor=pointer]:
+                - /url: https://www.douyin.com/jingxuan/game
+              - link "Sealock箱包旗舰店" [ref=e1569] [cursor=pointer]:
+                - /url: https://www.douyin.com/user/MS4wLjABAAAAQcWETT6pQKlyLPallixnMcfHQ1bJHu-2gjKfZl2IBlpr_JJ-gdiztzc-HexH-efH
+              - 'link "庆祝成都锦城学院建校21周年系列活动·第二十一届锦城之春 学生文化艺术节之乐动锦城校园合唱比赛圆满举办#寻味烟火气 #标记我的校园生活 #2026高考 #2026毕业季 #抖音学习充能企划 @抖音校园 @四川教育发布" [ref=e1571] [cursor=pointer]':
+                - /url: https://www.douyin.com/video/7646806664938573108
+              - link "一冲二稳三保怎么分配" [ref=e1573] [cursor=pointer]:
+                - /url: https://www.douyin.com/topic/7509888986257573915
+              - link "高考规划全网最牛的老师" [ref=e1575] [cursor=pointer]:
+                - /url: https://www.douyin.com/shipin/7509915956081281061
+              - link "嘉兴高考成绩什么时候出来" [ref=e1577] [cursor=pointer]:
+                - /url: https://www.douyin.com/search/%E5%98%89%E5%85%B4%E9%AB%98%E8%80%83%E6%88%90%E7%BB%A9%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E5%87%BA%E6%9D%A5
+              - link "刘晓庆回应和王婆互动冷淡：嗓子哑了" [ref=e1579] [cursor=pointer]:
+                - /url: https://www.douyin.com/video/7634175842143122918?source=Baiduspider
+              - 'link "新一代的孩子有多优秀，看看这位自救的女孩 #00后 #高三 #正能量 #家庭教育" [ref=e1581] [cursor=pointer]':
+                - /url: https://www.douyin.com/video/7342860704556404002?source=Baiduspider
+              - 'link "夏普2008打印机f2-40#办公设备 #专业的事交给专业的人" [ref=e1583] [cursor=pointer]':
+                - /url: https://www.douyin.com/video/7340794360256056614?source=Baiduspider
+              - generic [ref=e1584]:
+                - link:
+                  - /url: https://www.douyin.com/video/7491894736869952805?source=Baiduspider-sdc
+              - 'link "亲爱的高考生们： 该祝你们什么呢 祝你考个好成绩 去自己想去的学校吗 可我总觉得在这个风华正茂的年纪 你应该听过太多类似的话 我想了想 我希望你 能不忘初心在自己热爱的领域闪闪发光 而无论是上学还是工作都是手段 幸福生活才是目的 最后祝你旗胜得开金榜名高考加油！#高考倒计时所有考生高考加油 #高考加油站#我们的明天鹿晗 #高中生活 #毕业倒计时" [ref=e1586] [cursor=pointer]':
+                - /url: https://www.douyin.com/video/7511364785533209906?source=Baiduspider
+              - 'link "养花看植物表现使用浇水管家再也养不死花#养花 #浇水管家" [ref=e1588] [cursor=pointer]':
+                - /url: https://www.douyin.com/video/7351389808419278115?source=Baiduspider
+              - link "音乐创作人@陈雅森 原唱歌曲一首新歌己上线《把你思念在秋风里》" [ref=e1590] [cursor=pointer]:
+                - /url: https://www.douyin.com/video/7541076964967779643?source=Baiduspider-sdc
+  - article [ref=e1596]:
+    - img [ref=e1598]
+    - generic [ref=e1599]:
+      - generic [ref=e1600]:
+        - generic [ref=e1601]: 登录后免费畅享高清视频
+        - img [ref=e1603] [cursor=pointer]
+      - generic [ref=e1606]:
+        - generic [ref=e1609]:
+          - generic [ref=e1611] [cursor=pointer]: 扫码登录
+          - generic [ref=e1615]:
+            - generic [ref=e1616]:
+              - generic [ref=e1617] [cursor=pointer]: 如何扫码
+              - generic [ref=e1618]:
+                - img "二维码" [ref=e1619]
+                - img [ref=e1621]
+              - img [ref=e1633]
+            - paragraph [ref=e1639]:
+              - paragraph [ref=e1640]: 打开「抖音APP」点击左上角
+              - img [ref=e1641]
+              - paragraph [ref=e1647]: 扫一扫
+        - generic [ref=e1650]:
+          - generic [ref=e1651] [cursor=pointer]:
+            - generic [ref=e1652]: 验证码登录
+            - img [ref=e1654]
+            - generic [ref=e1655]: 密码登录
+          - generic [ref=e1659]:
+            - generic [ref=e1661]:
+              - combobox "国家/地区" [ref=e1664]: "+86"
+              - img [ref=e1667]
+              - textbox "请输入手机号" [ref=e1668]
+            - generic [ref=e1670]:
+              - textbox "请输入验证码" [ref=e1672]
+              - generic [ref=e1673]: 获取验证码
+            - generic [ref=e1676]: 登录
+            - generic "登录即代表同意用户协议和隐私政策" [ref=e1678]:
+              - text: 登录即代表同意
+              - link "用户协议" [ref=e1679] [cursor=pointer]:
+                - /url: https://www.douyin.com/agreements/?id=6773906068725565448
+              - text: 和
+              - link "隐私政策" [ref=e1680] [cursor=pointer]:
+                - /url: https://www.douyin.com/agreements/?id=6773901168964798477

@@ -1,0 +1,77 @@
+# Seedance 2.0 提示词规范（校验版）
+# 来源：seedance.tv 官方博客  |  校验日期：2026-06-04
+# ⚠️ 仅收录官方文档中明确出现的词汇，不含 SD/FLUX 生态词汇
+
+# ===================== 核心公式 =====================
+[镜头类型], [主体+视觉细节], [一个清晰动作], [环境+时间], [运镜], [光线], [视觉风格], [画幅比例]
+
+# ===================== 镜头类型 =====================
+extreme close-up                    极近特写
+close-up                            特写
+medium shot                         中景
+wide shot                           远景
+aerial drone shot                   航拍
+over-the-shoulder shot              越肩
+tracking shot                       跟拍/推轨
+static shot                         静态/锁定
+
+# ===================== 运镜（官方证实） =====================
+slow dolly forward                  缓慢前推
+slow dolly back                     缓慢后拉
+gentle pan left                     轻摇左
+gentle pan right                    轻摇右
+subtle zoom in                      微推
+slow zoom out                       慢拉
+orbit around the subject            环绕主体
+tilt up from the ground             从地面仰拍
+handheld slight camera shake        手持微晃（自然主义）
+
+# ===================== 主体动作 =====================
+moves gracefully
+slow motion
+timelapse
+hovering gently
+drifting through frame
+
+# ===================== 光线 =====================
+warm golden hour sunlight           暖金色时刻阳光
+soft diffused cloud light, no harsh shadows   阴天柔光
+blue twilight, cool tones           蓝调时刻
+clean studio lighting, soft box light from the left   影棚光
+hard chiaroscuro lighting, deep shadows   戏剧化强对比
+neon reflections on wet pavement    霓虹反射
+warm candlelight flickering, low key   烛光
+soft natural window light from the right, indoor setting   窗光
+
+# ===================== 视觉风格 =====================
+35mm film grain, Kodak color palette
+anamorphic lens flares
+cinematic widescreen 2.35:1
+documentary style, naturalistic
+moody and atmospheric
+ethereal and dreamlike
+gritty and realistic
+clean and minimal
+dramatic tension
+1970s film aesthetic, muted colors
+noir style, black and white
+contemporary commercial, bright and clean
+vintage 8mm film look
+
+# ===================== 图生视频写法 =====================
+Animate this image with [动作], [运镜], [光线变化], no identity change, no extra objects, no text distortion
+
+# ===================== 负面提示词（官方支持） =====================
+不要改变面部结构、年龄、发型、服装颜色、体型。
+不要出现额外人物，不重复角色，不脸部变形。
+不突然换装，不大幅改变妆容，不扭曲手部。
+
+# ===================== 提示词长度 =====================
+35-80 个英文单词最佳
+
+# ===================== 关键规则 =====================
+1. 逗号分隔，不用长句
+2. 最重要的内容放最前面
+3. 一次只改一个变量迭代
+4. 避免同时写多个复杂运动
+5. 图生视频：不重新描述主体，只写动作和运镜
