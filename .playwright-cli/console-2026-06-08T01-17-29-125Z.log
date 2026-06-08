@@ -1,4 +1,0 @@
-[     231ms] [INFO] %c%s line-height: 30px; color: #FF6699 bili-fe-fp: 1.1.4 @ https://s1.hdslb.com/bfs/seed/jinkela/short/user-fingerprint/bili-user-fingerprint.min.js:0
-[     393ms] [INFO] %c bili-fe-mirror %c v2.1.0  padding: 2px 6px; border-radius: 3px 0 0 3px; color: #fff; background: #FF6699; font-weight: bold; padding: 2px 6px; border-radius: 0 3px 3px 0; color: #fff; background: #FF9999; font-weight: bold; @ https://s1.hdslb.com/bfs/seed/jinkela/short/b-mirror/biliMirror.umd.mini.js:1
-[     394ms] [LOG] 白屏检测是否正常 {status: error, loop: 0, data: Object} @ https://space.bilibili.com/2035222731:176
-[    1397ms] [LOG] 白屏检测是否正常 {status: ok, loop: 1, data: Object} @ https://space.bilibili.com/2035222731:176

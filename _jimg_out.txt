@@ -1,11 +1,0 @@
-🎨 即梦 AI 图片生成 4.0
-   提示词: 一只白色小猫
-   分辨率: 2048×2048
-
-📤 提交任务...
-   task_id: 18427546860967284633
-   等待生成中..      等待生成中...      等待生成中....      等待生成中.   
-
-✅ 生成成功！共 1 张图片
-
-   图片 1: https://p9-aiop-sign.byteimg.com/tos-cn-i-vuqhorh59i/20260602173503995FFD3B5CC5925FBECF-6007-0~tplv-vuqhorh59i-image-v1.image?rk3s=7f9e702d&x-expires=1780479304&x-signature=BhUVTtORNNWhRvioJW5EsNSMGmY%3D
