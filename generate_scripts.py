@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-🐧 咕咕嘎嘎 剧本自动生成器 v1.0
+🐧 咕咕嘎嘎 剧本自动生成器 v1.1
 DeepSeek AI 驱动 · 30分钟持续产出 · Web可视化界面
 访问 http://localhost:8765 查看控制面板
 """
@@ -16,6 +16,24 @@ DURATION_MIN = 30
 PORT = 8765
 API_URL = "https://api.deepseek.com/v1/chat/completions"
 MODEL = "deepseek-chat"
+
+def _load_env():
+    """从 .env 文件加载环境变量（零依赖，纯标准库）"""
+    env_path = WORK_DIR / ".env"
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8").strip().split("\n"):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, _, val = line.partition("=")
+                key, val = key.strip(), val.strip()
+                if val.startswith('"') and val.endswith('"'):
+                    val = val[1:-1]
+                if val.startswith("'") and val.endswith("'"):
+                    val = val[1:-1]
+                if key not in os.environ:  # 不覆盖已有环境变量
+                    os.environ[key] = val
+
+_load_env()
 API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 DURATION_MIN_LOCK = threading.Lock()
 
@@ -372,8 +390,19 @@ class Handler(BaseHTTPRequestHandler):
 # ═══ 入口 ═══
 def main():
     if not API_KEY:
-        print("[ERR] 未设置 DEEPSEEK_API_KEY 环境变量")
-        print("请运行: setx DEEPSEEK_API_KEY \"你的API Key\"")
+        print("=" * 55)
+        print("[错误] 未找到 DeepSeek API Key")
+        print()
+        print("两种方式配置（任选一种）：")
+        print(f"  方式1（推荐）: 在 .env 文件中写入")
+        print(f"     {WORK_DIR / '.env'}")
+        print("     内容: DEEPSEEK_API_KEY=sk-xxxxxxxx")
+        print()
+        print("  方式2: 设置系统环境变量")
+        print("     setx DEEPSEEK_API_KEY \"sk-xxxxxxxx\"")
+        print()
+        print("获取 API Key: https://platform.deepseek.com/api_keys")
+        print("=" * 55)
         sys.exit(1)
     
     if not HTML_PATH.exists():
