@@ -36,11 +36,25 @@ echo.
 rem ---- 创建 .env 文件（如果不存在） ----
 set "ENV_FILE=%SCRIPT_DIR%\.env"
 if not exist "%ENV_FILE%" (
-    echo   ⚠️  首次运行，请配置 DeepSeek API Key
+    echo   ============================================
+    echo     ⚠️  首次运行需要配置 DeepSeek API Key
+    echo   ============================================
     echo.
-    set /p API_KEY_INPUT="  请输入 DeepSeek API Key (sk-...): "
+    echo   【如何获取 API Key】
+    echo   1. 打开浏览器访问:
+    echo      https://platform.deepseek.com/api_keys
+    echo   2. 注册/登录 DeepSeek 开放平台
+    echo   3. 点击「创建 API Key」, 复制生成的密钥
+    echo      （格式类似: sk-xxxxxxxxxxxxxxxx）
+    echo   4. 粘贴到下方并回车
+    echo.
+    echo   💡 费用: 很便宜，几块钱够生成几十集
+    echo   💡 充值: https://platform.deepseek.com/top_up
+    echo.
+    set /p API_KEY_INPUT="   请输入 API Key (sk-...): "
     echo DEEPSEEK_API_KEY=!API_KEY_INPUT!> "%ENV_FILE%"
-    echo   ✅ 已保存到 .env 文件
+    echo.
+    echo   ✅ 已保存到 .env 文件（下次启动无需再输入）
     echo.
 )
 
