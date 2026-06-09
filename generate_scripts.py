@@ -425,14 +425,28 @@ def main():
     server.allow_reuse_address = True  # 防止上次残留占用端口
     print(f"🐧 咕咕嘎嘎剧本生成器已启动")
     url = f"http://localhost:{PORT}"
-    print(f"🌐 打开浏览器访问: {url}")
-    try:
-        subprocess.Popen(f'start "" "{url}"', shell=True)
-    except Exception:
-        pass
+    print(f"🌐 浏览器即将自动打开: {url}")
     print(f"⏱  运行时长: {DURATION_MIN} 分钟")
     print(f"按下 Ctrl+C 停止服务器")
     print("-" * 50)
+
+    # 后台线程开浏览器（等服务器确认就绪后再弹）
+    def _open_browser():
+        time.sleep(0.5)
+        # 方法1: os.startfile（Windows原生）
+        try:
+            os.startfile(url)
+            return
+        except Exception:
+            pass
+        # 方法2: cmd /c start
+        try:
+            subprocess.Popen(['cmd', '/c', 'start', url])
+        except Exception:
+            pass
+
+    threading.Thread(target=_open_browser, daemon=True).start()
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:
