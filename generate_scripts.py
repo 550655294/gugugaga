@@ -5,7 +5,7 @@ DeepSeek AI 驱动 · 30分钟持续产出 · Web可视化界面
 访问 http://localhost:8765 查看控制面板
 """
 
-import json, os, re, sys, time, threading, glob, urllib.request, urllib.error
+import json, os, re, sys, time, threading, glob, subprocess, urllib.request, urllib.error
 from pathlib import Path
 from datetime import datetime, timedelta
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -425,7 +425,7 @@ def main():
     url = f"http://localhost:{PORT}"
     print(f"🌐 打开浏览器访问: {url}")
     try:
-        os.startfile(url)  # Windows 直接调用默认浏览器
+        subprocess.Popen(f'start "" "{url}"', shell=True)  # cmd /c start 打开默认浏览器
     except Exception:
         pass  # 打开失败也不影响服务器运行
     print(f"⏱  运行时长: {DURATION_MIN} 分钟")

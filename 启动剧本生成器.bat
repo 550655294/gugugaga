@@ -80,6 +80,13 @@ echo   浏览器将自动打开 http://localhost:8765
 echo   ⏹  关闭此窗口即可停止
 echo.
 
-"%PYTHON%" generate_scripts.py
+rem 后台启动 Python（/B = 同一窗口不另开）
+start /B "" "%PYTHON%" generate_scripts.py
+
+rem 等服务器就绪
+timeout /t 2 /nobreak >nul
+
+rem 保底：如果 Python 那边没弹浏览器，bat 来开
+start http://localhost:8765
 
 pause
