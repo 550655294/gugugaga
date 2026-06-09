@@ -33,30 +33,46 @@ exit /b 1
 echo   ✅ Python 已找到: %PYTHON%
 echo.
 
-rem ---- 创建 .env 文件（如果不存在） ----
+rem ---- 检查 DeepSeek API Key ----
 set "ENV_FILE=%SCRIPT_DIR%\.env"
-if not exist "%ENV_FILE%" (
-    echo   ============================================
-    echo     ⚠️  首次运行需要配置 DeepSeek API Key
-    echo   ============================================
+
+rem 优先级1: 系统环境变量已设置 → 跳过
+if defined DEEPSEEK_API_KEY (
+    echo   ✅ 检测到系统环境变量 DEEPSEEK_API_KEY，跳过配置
     echo.
-    echo   【如何获取 API Key】
-    echo   1. 打开浏览器访问:
-    echo      https://platform.deepseek.com/api_keys
-    echo   2. 注册/登录 DeepSeek 开放平台
-    echo   3. 点击「创建 API Key」, 复制生成的密钥
-    echo      （格式类似: sk-xxxxxxxxxxxxxxxx）
-    echo   4. 粘贴到下方并回车
-    echo.
-    echo   💡 费用: 很便宜，几块钱够生成几十集
-    echo   💡 充值: https://platform.deepseek.com/top_up
-    echo.
-    set /p API_KEY_INPUT="   请输入 API Key (sk-...): "
-    echo DEEPSEEK_API_KEY=!API_KEY_INPUT!> "%ENV_FILE%"
-    echo.
-    echo   ✅ 已保存到 .env 文件（下次启动无需再输入）
-    echo.
+    goto :launch
 )
+
+rem 优先级2: .env 文件存在且有有效内容 → 跳过
+if exist "%ENV_FILE%" (
+    echo   ✅ 检测到 .env 配置文件，跳过配置
+    echo.
+    goto :launch
+)
+
+rem 优先级3: 都没有 → 首次引导输入
+echo   ============================================
+echo     ⚠️  需要配置 DeepSeek API Key
+echo   ============================================
+echo.
+echo   【如何获取 API Key】
+echo   1. 打开浏览器访问:
+echo      https://platform.deepseek.com/api_keys
+echo   2. 注册/登录 DeepSeek 开放平台
+echo   3. 点击「创建 API Key」, 复制生成的密钥
+echo      （格式类似: sk-xxxxxxxxxxxxxxxx）
+echo   4. 粘贴到下方并回车
+echo.
+echo   💡 费用: 很便宜，几块钱够生成几十集
+echo   💡 充值: https://platform.deepseek.com/top_up
+echo.
+set /p API_KEY_INPUT="   请输入 API Key (sk-...): "
+echo DEEPSEEK_API_KEY=%API_KEY_INPUT%> "%ENV_FILE%"
+echo.
+echo   ✅ 已保存到 .env 文件（下次启动无需再输入）
+echo.
+
+:launch
 
 rem ---- 启动 ----
 echo   🚀 启动服务器...
