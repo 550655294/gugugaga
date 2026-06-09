@@ -421,22 +421,26 @@ def main():
         sys.exit(1)
     
     server = HTTPServer(("0.0.0.0", PORT), Handler)
+    server.allow_reuse_address = True  # 防止上次残留占用端口
     print(f"🐧 咕咕嘎嘎剧本生成器已启动")
     url = f"http://localhost:{PORT}"
     print(f"🌐 打开浏览器访问: {url}")
     try:
-        subprocess.Popen(f'start "" "{url}"', shell=True)  # cmd /c start 打开默认浏览器
+        subprocess.Popen(f'start "" "{url}"', shell=True)
     except Exception:
-        pass  # 打开失败也不影响服务器运行
+        pass
     print(f"⏱  运行时长: {DURATION_MIN} 分钟")
     print(f"按下 Ctrl+C 停止服务器")
     print("-" * 50)
-    
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n👋 服务器已停止")
         server.server_close()
+    except Exception as e:
+        print(f"\n❌ 服务器异常: {e}")
+        server.server_close()
+        input("按回车键退出...")
 
 if __name__ == "__main__":
     main()

@@ -77,16 +77,19 @@ echo.
 rem ---- 启动 ----
 echo   🚀 启动服务器...
 echo   浏览器将自动打开 http://localhost:8765
-echo   ⏹  关闭此窗口即可停止
+echo   ⏹  关闭服务器窗口即可停止
 echo.
 
-rem 后台启动 Python（/B = 同一窗口不另开）
-start /B "" "%PYTHON%" generate_scripts.py
+rem 在独立窗口启动 Python 服务器（这样你能看到服务器日志）
+start "咕咕嘎嘎-服务器" "%PYTHON%" -u generate_scripts.py
 
 rem 等服务器就绪
-timeout /t 2 /nobreak >nul
+echo   等待服务器启动...
+timeout /t 3 /nobreak >nul
 
-rem 保底：如果 Python 那边没弹浏览器，bat 来开
+rem 打开浏览器
 start http://localhost:8765
+echo   ✅ 浏览器已打开，如果没弹出请手动访问 http://localhost:8765
+echo.
 
 pause
