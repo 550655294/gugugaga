@@ -75,21 +75,11 @@ echo.
 :launch
 
 rem ---- 启动 ----
-echo   🚀 正在启动服务器...
-echo.
-
-rem 先用 start 在后台启动 Python 服务器
-start "" "%PYTHON%" generate_scripts.py
-
-rem 等 3 秒让服务器就绪
-echo   等待服务器就绪...
-timeout /t 3 /nobreak >nul
-
-rem 再打开浏览器
-echo   🌐 打开浏览器 http://localhost:8765
-start http://localhost:8765
-
+echo   🚀 启动服务器...
+echo   浏览器将自动打开 http://localhost:8765
 echo   ⏹  关闭此窗口即可停止
 echo.
+
+"%PYTHON%" generate_scripts.py
 
 pause
