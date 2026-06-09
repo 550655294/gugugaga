@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>project.ts — Visual Studio Code</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1e1e1e; --sidebar:#252526; --tab:#2d2d2d; --tab-active:#1e1e1e;
+  --editor:#1e1e1e; --terminal:#1a1a1a; --statusbar:#007acc; --border:#3c3c3c;
+  --text:#cccccc; --text-dim:#858585; --text-light:#d4d4d4;
+  --keyword:#569cd6; --string:#ce9178; --comment:#6a9955; --func:#dcdcaa; --var:#9cdcfe;
+  --green:#4ec9b0; --yellow:#dcdcaa; --red:#f44747; --pink:#c586c0;
+}
+body{
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column;
+  overflow:hidden; user-select:none;
+}
+
+/* ── 标题栏 ── */
+.titlebar{
+  height:30px; background:#3c3c3c; display:flex; align-items:center; padding:0 12px;
+  font-size:12px; color:#ccc; gap:8px; flex-shrink:0;
+  border-bottom:1px solid var(--border);
+}
+.titlebar .win-btn{width:12px;height:12px;border-radius:50%;cursor:pointer}
+.titlebar .win-btn.r{background:#ff5f57}.titlebar .win-btn.y{background:#febc2e}.titlebar .win-btn.g{background:#28c840}
+.titlebar .title{flex:1;text-align:center;font-size:12px;color:#bbb}
+.titlebar .title .fname{color:#fff}
+.titlebar .title .sep{color:#555;margin:0 6px}
+
+/* ── 主布局 ── */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ── 侧边栏 ── */
+.sidebar{
+  width:260px; background:var(--sidebar); border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+}
+.sidebar-header{
+  padding:8px 16px; font-size:11px; font-weight:600; letter-spacing:1px;
+  color:#ccc; text-transform:uppercase; display:flex; gap:6px; align-items:center;
+  border-bottom:1px solid #2a2a2a;
+}
+.sidebar-header .dot{width:6px;height:6px;background:#4ade80;border-radius:50%}
+.file-tree{flex:1;overflow-y:auto;padding:4px 0;font-size:12px}
+.file-tree::-webkit-scrollbar{width:6px}
+.file-tree::-webkit-scrollbar-thumb{background:#424242;border-radius:3px}
+.file-item{
+  display:flex;align-items:center;gap:6px;padding:3px 16px 3px 24px;
+  cursor:pointer;color:#ccc;transition:background 0.1s;
+}
+.file-item:hover{background:#2a2d2e}
+.file-item.active{background:#37373d}
+.file-item .ficon{font-size:13px;width:16px;text-align:center}
+.file-item .fname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item .fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.file-item .fdot.g{background:#4ade80}.file-item .fdot.y{background:#facc15}
+
+/* ── 编辑区 ── */
+.editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* 标签栏 */
+.tabs{
+  height:36px; background:var(--tab); display:flex; align-items:stretch;
+  border-bottom:1px solid var(--border); overflow-x:auto; flex-shrink:0;
+}
+.tabs::-webkit-scrollbar{height:2px}
+.tab{
+  display:flex;align-items:center;gap:6px;padding:0 16px;font-size:12px;
+  color:#ccc;border-right:1px solid #2a2a2a;white-space:nowrap;cursor:pointer;
+}
+.tab.active{background:var(--editor);color:#fff;border-top:2px solid var(--keyword)}
+.tab .t-icon{font-size:12px}
+.tab .t-close{font-size:10px;color:#888;margin-left:4px}
+.tab .t-close:hover{color:#fff}
+.tab .t-mod{width:7px;height:7px;border-radius:50%;background:#dcdcaa;flex-shrink:0}
+
+/* 编辑器主体 */
+.editor-body{flex:1;overflow-y:auto;position:relative;background:var(--editor)}
+.editor-body::-webkit-scrollbar{width:8px}
+.editor-body::-webkit-scrollbar-thumb{background:#424242;border-radius:4px}
+.editor-lines{
+  display:flex; min-height:100%; counter-reset:line;
+}
+.line-nums{
+  width:50px; flex-shrink:0; padding:4px 0; text-align:right; color:#858585;
+  font-size:13px; line-height:1.55; background:#1a1a1a; border-right:1px solid #2a2a2a;
+}
+.line-nums span{display:block;padding-right:12px}
+.editor-content{
+  flex:1; padding:6px 0 6px 14px; font-size:13px; line-height:1.55;
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-all;
+}
+.editor-content::-webkit-scrollbar{height:4px}
+.editor-content::-webkit-scrollbar-thumb{background:#424242;border-radius:2px}
+
+
+/* ── 编辑器工具栏 ── */
+.editor-toolbar{
+  height:30px;background:var(--editor);display:flex;align-items:center;padding:0 8px;
+  gap:4px;border-bottom:1px solid #2a2a2a;flex-shrink:0;
+}
+.tb-btn{
+  display:flex;align-items:center;gap:4px;padding:2px 10px;border-radius:4px;
+  font-size:11px;cursor:pointer;color:#ccc;background:transparent;border:none;
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+}
+.tb-btn:hover{background:#3a3d41}
+.tb-btn.run{color:#4ade80}.tb-btn.run:hover{background:#1a3a2a}
+.tb-btn.stop{color:#f44747}.tb-btn.stop:hover{background:#3a1a1a}
+.tb-btn:disabled{color:#555;cursor:not-allowed;pointer-events:none}
+.tb-btn .tb-icon{font-size:12px}
+.tb-sep{width:1px;height:16px;background:#3c3c3c;margin:0 4px}
+.tb-hint{font-size:10px;color:#555;margin-left:auto}
+
+/* ── 进度条 ── */
+.progress-bar-wrap{height:3px;background:var(--editor);flex-shrink:0;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#007acc,#40a6ff,#007acc);background-size:200% 100%;transition:width .4s ease}
+.progress-bar-fill.running{animation:shimmer 2s linear infinite}
+.progress-bar-fill.done{background:linear-gradient(90deg,#28c840,#4ade80,#28c840);background-size:200% 100%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:0 0}}
+.progress-info{height:22px;background:var(--editor);display:flex;align-items:center;padding:0 60px 0 10px;font-size:11px;gap:12px;flex-shrink:0;border-bottom:1px solid #2a2a2a}
+.progress-info .pi-label{color:var(--text-dim)}
+.progress-info .pi-val{color:var(--text);font-weight:600}
+.progress-info .pi-spacer{flex:1}
+.progress-info .pi-pct{color:var(--keyword);font-weight:700;font-size:12px}
+
+/* 语法高亮 */
+.kw{color:var(--keyword)}.str{color:var(--string)}.cm{color:var(--comment)}
+.fn{color:var(--func)}.vr{color:var(--var)}.nm{color:var(--green)}.pk{color:var(--pink)}
+.hl-line{background:rgba(255,255,255,0.03)}
+.cursor{display:inline-block;width:2px;height:16px;background:#fff;animation:blink 1s step-end infinite;vertical-align:text-bottom}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── 终端面板 ── */
+.terminal-panel{
+  height:180px; background:var(--terminal); border-top:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+}
+.terminal-tabs{
+  height:28px; display:flex; align-items:center; padding:0 10px; gap:4px;
+  background:#252526; border-bottom:1px solid var(--border);
+}
+.terminal-tab{
+  font-size:11px; color:#ccc; padding:3px 12px; cursor:pointer;
+  border-bottom:2px solid transparent;
+}
+.terminal-tab.active{border-bottom-color:var(--keyword);color:#fff}
+.terminal-body{
+  flex:1; overflow-y:auto; padding:6px 12px; font-size:12px;
+  font-family:'Cascadia Code','Consolas','Courier New',monospace;
+  line-height:1.6;
+}
+.terminal-body::-webkit-scrollbar{width:6px}
+.terminal-body::-webkit-scrollbar-thumb{background:#424242;border-radius:3px}
+.term-line{padding:1px 0}
+.term-line.e{color:var(--red)}.term-line.s{color:var(--green)}.term-line.w{color:var(--yellow)}.term-line.d{color:var(--text-dim)}
+
+/* ── 状态栏 ── */
+.statusbar{
+  height:24px; background:var(--statusbar); display:flex; align-items:center; padding:0 12px;
+  font-size:11px; color:#fff; gap:16px; flex-shrink:0;
+}
+.statusbar .sb-item{display:flex;align-items:center;gap:4px;cursor:pointer}
+.statusbar .sb-spacer{flex:1}
+.statusbar .sb-blinking .dot{width:7px;height:7px;border-radius:50%;animation:blink 1.2s infinite}
+.statusbar .sb-blinking .dot.g{background:#4ade80}.sb-blinking .dot.y{background:#facc15}.sb-blinking .dot.r{background:#ff5f57}
+
+/* ── 弹出提示 ── */
+.toast{
+  position:fixed;top:50px;right:20px;background:#3c3c3c;color:#fff;padding:10px 20px;
+  border-radius:4px;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,0.6);z-index:999;
+  opacity:0;transform:translateY(-10px);transition:all 0.3s;pointer-events:none;
+  border-left:3px solid var(--green);
+}
+.toast.on{opacity:1;transform:translateY(0)}
+
+/* ── 可编辑配置 ── */
+.config-edit{display:flex;align-items:center;gap:8px;margin:4px 0}
+.config-edit input{
+  background:#2d2d2d;border:1px solid #3c3c3c;color:var(--keyword);padding:2px 8px;
+  border-radius:3px;font-size:12px;width:60px;text-align:center;
+  font-family:'Cascadia Code','Consolas',monospace;
+}
+.config-edit input:focus{outline:none;border-color:var(--keyword)}
+.config-edit .save-btn{
+  background:#0e639c;color:#fff;border:none;padding:2px 10px;border-radius:3px;
+  font-size:11px;cursor:pointer;font-family:'Cascadia Code','Consolas',monospace;
+}
+.config-edit .save-btn:hover{background:#1177bb}
+
+/* ── 需求面板 ── */
+.req-panel{display:flex;flex-direction:column;gap:14px;padding:16px 20px;height:100%;overflow-y:auto}
+.req-panel::-webkit-scrollbar{width:6px}
+.req-panel::-webkit-scrollbar-thumb{background:#424242;border-radius:3px}
+.req-section{border:1px solid #2a2a2a;border-radius:6px;overflow:hidden}
+.req-section-title{
+  background:#252526;padding:8px 14px;font-size:12px;font-weight:600;
+  color:var(--keyword);display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid #2a2a2a;
+}
+.req-section-body{padding:10px 14px;font-size:12px;line-height:1.8}
+.req-tag{
+  display:inline-block;padding:1px 8px;border-radius:10px;font-size:10px;
+  margin:2px 4px 2px 0;
+}
+.req-tag.required{background:#5a1a1a;color:#f44747}
+.req-tag.optional{background:#1a3a2a;color:#4ade80}
+.req-table{width:100%;border-collapse:collapse;font-size:11px}
+.req-table td,.req-table th{padding:4px 10px;border-bottom:1px solid #2a2a2a;text-align:left}
+.req-table th{color:var(--text-dim);font-weight:400}
+.req-table td{color:var(--text)}
+.req-table tr:last-child td{border-bottom:none}
+
+/* ── 文件查看模态 ── */
+.md-viewer-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);
+  z-index:1000;display:flex;align-items:center;justify-content:center;
+}
+.md-viewer{
+  background:var(--editor);border:1px solid var(--border);border-radius:8px;
+  width:85vw;height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.5);
+}
+.md-viewer-header{
+  display:flex;align-items:center;padding:10px 16px;background:#252526;
+  border-bottom:1px solid var(--border);border-radius:8px 8px 0 0;
+  font-size:13px;color:var(--keyword);gap:8px;
+}
+.md-viewer-header .md-fname{flex:1;color:var(--text-light)}
+.md-viewer-close{
+  cursor:pointer;color:#888;font-size:16px;border:none;background:none;padding:0 4px;
+}
+.md-viewer-close:hover{color:#fff}
+.md-viewer-body{
+  flex:1;overflow-y:auto;padding:16px 20px;font-size:13px;line-height:1.7;
+  white-space:pre-wrap;word-break:break-word;
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  color:var(--text-light);
+}
+.md-viewer-body::-webkit-scrollbar{width:8px}
+.md-viewer-body::-webkit-scrollbar-thumb{background:#424242;border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- 标题栏 -->
+<div class="titlebar">
+  <span class="win-btn r"></span>
+  <span class="win-btn y"></span>
+  <span class="win-btn g"></span>
+  <span class="title">
+    <span class="fname">generate_pipeline.ts</span>
+    <span class="sep">—</span>
+    <span>咕咕嘎嘎项目 — Visual Studio Code [管理员]</span>
+  </span>
+</div>
+
+<!-- 主布局 -->
+<div class="main">
+
+  <!-- 侧边栏 - 文件浏览器 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span>▸</span>
+      <span>咕咕嘎嘎</span>
+      <span id="sidebarStatus" class="dot" style="background:#facc15" title="项目状态"></span>
+    </div>
+    <div class="file-tree" id="fileTree"></div>
+  </div>
+
+  <!-- 编辑区 -->
+  <div class="editor-area">
+    <!-- 标签栏 -->
+    <div class="tabs">
+      <div class="tab active" id="tabMain">
+        <span class="t-icon">📄</span>
+        <span>generate_pipeline.ts</span>
+        <span class="t-mod" id="tabMod" style="background:transparent"></span>
+        <span class="t-close">✕</span>
+      </div>
+      <div class="tab" id="tabConfig">
+        <span class="t-icon">⚙</span>
+        <span>pipeline.config.ts</span>
+      </div>
+      <div class="tab" id="tabReqs">
+        <span class="t-icon">📋</span>
+        <span>pipeline.requirements.ts</span>
+      </div>
+</div>
+    <!-- 编辑器工具栏 -->
+    <div class="editor-toolbar">
+      <button class="tb-btn run" id="tbRun" onclick="startGen()" title="运行流水线 (Ctrl+R)">
+        <span class="tb-icon">▶</span> Run Pipeline
+      </button>
+      <button class="tb-btn stop" id="tbStop" onclick="stopGen()" disabled title="停止 (Ctrl+C)">
+        <span class="tb-icon">■</span> Stop
+      </button>
+      <span class="tb-sep"></span>
+      <span class="tb-hint" id="tbHint" style="color:#4ade80">⬆ 点击 Run Pipeline 开始</span>
+    </div>
+    <!-- 进度条 -->
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progBar" style="width:0%"></div></div>
+    <div class="progress-info" id="progInfo">
+      <span class="pi-item"><span class="pi-label">Build</span><span class="pi-val" id="piStatus">IDLE</span></span>
+      <span class="pi-item"><span class="pi-label">Episodes</span><span class="pi-val" id="piEps">0</span></span>
+      <span class="pi-item"><span class="pi-label">Errors</span><span class="pi-val" id="piErrs">0</span></span>
+      <span class="pi-spacer"></span>
+      <span class="pi-item"><span class="pi-label">Time</span><span class="pi-val" id="piTime">30:00</span></span>
+      <span class="pi-item"><span class="pi-pct" id="piPct">0%</span></span>
+    </div>
+
+    <!-- 编辑器主体 -->
+    <div class="editor-body" id="editorBody">
+      <div class="editor-lines">
+        <div class="line-nums" id="lineNums"></div>
+        <div class="editor-content" id="editorContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 终端面板 -->
+<div class="terminal-panel">
+  <div class="terminal-tabs">
+    <span class="terminal-tab active">📟 输出</span>
+    <span class="terminal-tab">🔍 问题</span>
+    <span class="terminal-tab">🐛 调试控制台</span>
+  </div>
+  <div class="terminal-body" id="terminalBody"></div>
+</div>
+
+<!-- 状态栏 -->
+<div class="statusbar">
+  <span class="sb-item sb-blinking" id="sbStatus">
+    <span class="dot" style="background:#facc15"></span>
+    <span>IDLE</span>
+  </span>
+  <span class="sb-item" id="sbEpisode">📄 待机中</span>
+  <span class="sb-spacer"></span>
+  <span class="sb-item" id="sbTimer">⏱ 30:00</span>
+  <span class="sb-item">🐧 TypeScript 5.4</span>
+  <span class="sb-item">UTF-8</span>
+  <span class="sb-item">行 1，列 1</span>
+</div>
+
+<!-- Toast提示 -->
+<div class="toast" id="toast">✅ 编译成功</div>
+
+<!-- MD 文件查看器 -->
+<div class="md-viewer-overlay" id="mdOverlay" style="display:none">
+  <div class="md-viewer">
+    <div class="md-viewer-header">
+      <span>📄</span>
+      <span class="md-fname" id="mdFname">文件.md</span>
+      <button class="md-viewer-close" onclick="closeMdViewer()">✕</button>
+    </div>
+    <div class="md-viewer-body" id="mdBody">加载中...</div>
+  </div>
+</div>
+
+<script>
+// ═══ 状态 ═══
+let pollTimer = null;
+let wasRunning = false;
+let lineCount = 38;
+let isConfigTab = false;
+let totalDurationSec = 30*60;
+
+// ═══ 文件树更新 ═══
+function updateFileTree(files){
+  let html = '';
+  // 文件夹
+  html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ src/</div>`;
+  html += `<div class="file-item"><span class="ficon">📄</span><span class="fname">generate_pipeline.ts</span></div>`;
+  html += `<div class="file-item"><span class="ficon">⚙</span><span class="fname">pipeline.config.ts</span></div>`;
+  html += `<div class="file-item"><span class="ficon">📦</span><span class="fname">types.d.ts</span></div>`;
+  html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ output/</div>`;
+  if(files && files.length > 0){
+    for(let f of files){
+      html += `<div class="file-item" onclick="viewMdFile('${he(f.name)}')" title="点击查看"><span class="ficon">🎬</span><span class="fname">${he(f.name)}</span><span class="fdot g"></span></div>`;
+    }
+  } else {
+    html += `<div class="file-item"><span class="ficon">📭</span><span class="fname" style="color:#888">(empty)</span></div>`;
+  }
+  html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ scripts/</div>`;
+  html += `<div class="file-item"><span class="ficon">🔧</span><span class="fname">start_generator.ps1</span></div>`;
+  document.getElementById('fileTree').innerHTML = html;
+}
+
+// ═══ 编辑器内容（伪装成 TypeScript 管道代码） ═══
+function buildEditorContent(d){
+  let lines = [];
+  let kw='kw',str='str',cm='cm',fn='fn',vr='vr',nm='nm',pk='pk';
+
+  lines.push(`<span class="${cm}">/**</span>`);
+  lines.push(`<span class="${cm}"> * 咕咕嘎嘎 剧本自动生成流水线</span>`);
+  lines.push(`<span class="${cm}"> * DeepSeek AI · Seedance 2.0 · 30min runtime</span>`);
+  lines.push(`<span class="${cm}"> * @see pipeline.config.ts</span>`);
+  lines.push(`<span class="${cm}"> */</span>`);
+  lines.push(``);
+  lines.push(`<span class="${kw}">import</span> { DeepSeekAPI } <span class="${kw}">from</span> <span class="${str}">'@ai/deepseek'</span>;`);
+  lines.push(`<span class="${kw}">import</span> { Pipeline, ScriptGen } <span class="${kw}">from</span> <span class="${str}">'./types'</span>;`);
+  lines.push(`<span class="${kw}">import</span> { config } <span class="${kw}">from</span> <span class="${str}">'./pipeline.config'</span>;`);
+  lines.push(``);
+  lines.push(`<span class="${kw}">class</span> <span class="${fn}">GuguScriptPipeline</span> <span class="${kw}">implements</span> Pipeline {`);
+  lines.push(`  <span class="${kw}">private</span> api: DeepSeekAPI;`);
+  lines.push(`  <span class="${kw}">private</span> episodeIndex: <span class="${nm}">number</span>;`);
+  lines.push(`  <span class="${kw}">private</span> generated: <span class="${nm}">number</span> = ${d.total||0};`);
+  lines.push(`  <span class="${kw}">private</span> errors: <span class="${nm}">number</span> = ${d.errors||0};`);
+  lines.push(``);
+  lines.push(`  <span class="${fn}">constructor</span>() {`);
+  lines.push(`    <span class="${kw}">this</span>.<span class="${vr}">api</span> = <span class="${kw}">new</span> DeepSeekAPI({`);
+  lines.push(`      model: <span class="${str}">'deepseek-chat'</span>,`);
+  lines.push(`      maxTokens: <span class="${nm}">16000</span>,`);
+  lines.push(`      temperature: <span class="${nm}">0.8</span>,`);
+  lines.push(`    });`);
+  lines.push(`    <span class="${kw}">this</span>.<span class="${vr}">episodeIndex</span> = <span class="${kw}">this</span>.<span class="${fn}">detectNextEpisode</span>();`);
+  lines.push(`  }`);
+  lines.push(``);
+
+  // 动态部分 - 当前状态
+  let statusText = d.running ? 'RUNNING' : (d.completed ? 'COMPLETED' : 'IDLE');
+  let statusColor = d.running ? nm : (d.completed ? 'str' : pk);
+  lines.push(`  <span class="${kw}">get</span> <span class="${fn}">status</span>(): <span class="${nm}">string</span> {`);
+  lines.push(`    <span class="${kw}">return</span> <span class="${statusColor}">'${statusText}'</span>;  <span class="${cm}">// ← 当前状态</span>`);
+  lines.push(`  }`);
+  lines.push(``);
+  // 进度计算（必须在ASCII art之前声明，否则pct处于TDZ死区）
+  let rem = d.remaining || totalDurationSec;
+  let totalSec = totalDurationSec, pct = d.running ? ((totalSec-rem)/totalSec*100) : 0;
+  pct = Math.min(100, Math.max(0, pct));
+  // 进度指示条(ASCII art)
+  let barLen=20, bfilled=Math.round(pct/100*barLen);
+  let bStr="█".repeat(bfilled)+"░".repeat(barLen-bfilled);
+  lines.push(`  <span class="${cm}">// ╔════════════════════════╗</span>`);
+  lines.push(`  <span class="${cm}">// ║ ${bStr} ║  ${pct.toFixed(0)}%</span>`);
+  lines.push(`  <span class="${cm}">// ╚════════════════════════╝</span>`);
+  lines.push(``);
+
+  let curEp = d.current || '等待启动...';
+  lines.push(`  <span class="${fn}">getCurrentTask</span>(): <span class="${nm}">string</span> {`);
+  lines.push(`    <span class="${kw}">return</span> <span class="${str}">'${curEp}'</span>;`);
+  lines.push(`  }`);
+  lines.push(``);
+
+  rem = d.remaining || totalDurationSec;
+  let mm = Math.floor(rem/60), ss = rem%60;
+  lines.push(`  <span class="${fn}">getRemainingTime</span>(): <span class="${nm}">string</span> {`);
+  lines.push(`    <span class="${kw}">return</span> <span class="${str}">'${mm}:${String(ss).padStart(2,'0')}'</span>;`);
+  lines.push(`  }`);
+  lines.push(``);
+
+  // 处理方法
+  lines.push(`  <span class="${kw}">async</span> <span class="${fn}">generate</span>(episode: <span class="${nm}">number</span>): <span class="${kw}">Promise</span>&lt;ScriptGen&gt; {`);
+  lines.push(`    <span class="${kw}">const</span> prompt = <span class="${kw}">this</span>.<span class="${fn}">buildSystemPrompt</span>();`);
+  lines.push(`    <span class="${kw}">const</span> response = <span class="${kw}">await</span> <span class="${kw}">this</span>.<span class="${vr}">api</span>.<span class="${fn}">chat</span>({`);
+  lines.push(`      system: prompt,`);
+  lines.push(`      user: <span class="${str}">\`创作第\${episode}集，8段双章节24秒格式\`</span>,`);
+  lines.push(`    });`);
+  lines.push(`    <span class="${kw}">return</span> <span class="${kw}">this</span>.<span class="${fn}">parseAndSave</span>(response);`);
+  lines.push(`  }`);
+  lines.push(``);
+
+  // 进度条伪装成循环
+  lines.push(`  <span class="${cm}">// Pipeline progress: ${pct.toFixed(1)}% ████████████████████</span>`);
+
+  lines.push(`}`);
+  lines.push(``);
+  lines.push(`<span class="${kw}">export</span> <span class="${kw}">default</span> <span class="${kw}">new</span> <span class="${fn}">GuguScriptPipeline</span>();`);
+
+  // 行号
+  let numHtml = '';
+  for(let i=1;i<=lines.length;i++) numHtml += `<span>${i}</span>`;
+
+  document.getElementById('lineNums').innerHTML = numHtml;
+  document.getElementById('editorContent').innerHTML = lines.join('\n');
+  lineCount = lines.length;
+
+  // 标签页圆点
+  let dot = document.getElementById('tabMod');
+  if(d.running) dot.style.background = '#4ade80';
+  else if(d.completed) dot.style.background = '#569cd6';
+  else dot.style.background = 'transparent';
+}
+
+// ── 进度条更新 ──
+function updateProgress(d){
+  let bar=document.getElementById("progBar");
+  let totalSec=totalDurationSec, rem=d.remaining||totalDurationSec, pct=0;
+  if(d.running) pct=Math.min(100,Math.max(0,(totalSec-rem)/totalSec*100));
+  else if(d.completed) pct=100;
+  bar.style.width=pct+"%";
+  bar.classList.remove("running","done");
+  if(d.running) bar.classList.add("running");
+  else if(d.completed) bar.classList.add("done");
+  let mm=Math.floor(rem/60), ss=rem%60;
+  document.getElementById("piStatus").textContent=d.running?"Building...":(d.completed?"SUCCESS":"IDLE");
+  document.getElementById("piEps").textContent=d.total||0;
+  document.getElementById("piErrs").textContent=d.errors||0;
+  document.getElementById("piTime").textContent=mm+":"+String(ss).padStart(2,"0");
+  document.getElementById("piPct").textContent=pct.toFixed(0)+"%";
+  // toolbar button states
+  let tbRun=document.getElementById("tbRun"), tbStop=document.getElementById("tbStop"), tbHint=document.getElementById("tbHint");
+  if(d.running){tbRun.disabled=true;tbStop.disabled=false;tbHint.textContent="Running... Ctrl+C to stop";}
+  else{tbRun.disabled=false;tbStop.disabled=true;tbHint.textContent=d.completed?"Build complete!":"Ctrl+R to start";}
+}
+
+// ═══ 终端输出 ═══
+function updateTerminal(logs){
+  let html = '';
+  html += `<div class="term-line d">PS E:\\咕咕嘎嘎&gt; .\\start_generator.ps1</div>`;
+  html += `<div class="term-line d">[INFO] 初始化 DeepSeek API 连接... OK</div>`;
+  html += `<div class="term-line d">[INFO] 加载共享参数模板... OK</div>`;
+  html += `<div class="term-line d">[INFO] 加载提示词规范... OK</div>`;
+  html += `<div class="term-line d">[INFO] 工作目录: E:\\咕咕嘎嘎\\</div>`;
+
+  if(logs && logs.length > 0){
+    for(let l of logs.slice(-20)){
+      let c='term-line d';
+      if(l.includes('❌')||l.includes('失败')||l.includes('💥')) c='term-line e';
+      else if(l.includes('✅')||l.includes('💾')||l.includes('🎉')||l.includes('🏁')||l.includes('完成')) c='term-line s';
+      else if(l.includes('🤖')||l.includes('📝')||l.includes('🚀')||l.includes('⏰')) c='term-line w';
+      html += `<div class="${c}">${he(l)}</div>`;
+    }
+  }else{
+    html += `<div class="term-line d">PS E:\\咕咕嘎嘎&gt; <span class="cursor"></span></div>`;
+  }
+
+  let tb = document.getElementById('terminalBody');
+  tb.innerHTML = html;
+  tb.scrollTop = tb.scrollHeight;
+}
+
+// ═══ 状态栏 ═══
+function updateStatusBar(d){
+  let sbStatus = document.getElementById('sbStatus');
+  let dot = sbStatus.querySelector('.dot');
+  let label = sbStatus.querySelector('span:last-child');
+
+  if(d.running){
+    dot.style.background = '#4ade80'; label.textContent = 'RUNNING';
+  } else if(d.completed){
+    dot.style.background = '#569cd6'; label.textContent = 'DONE';
+  } else {
+    dot.style.background = '#facc15'; label.textContent = 'IDLE';
+  }
+
+  document.getElementById('sbEpisode').innerHTML = `📄 ${d.current||'待机中'}`;
+  let rem = d.remaining||totalDurationSec;
+  document.getElementById('sbTimer').innerHTML = `⏱ ${Math.floor(rem/60)}:${String(rem%60).padStart(2,'0')}`;
+
+  // 侧边栏圆点
+  let sd = document.getElementById('sidebarStatus');
+  if(d.running) sd.style.background = '#4ade80';
+  else if(d.completed) sd.style.background = '#569cd6';
+  else sd.style.background = '#facc15';
+}
+
+// ═══ Toast ═══
+function showToast(msg){
+  let t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'), 2500);
+}
+
+// ═══ 轮询 ═══
+async function poll(){
+  try{
+    let r = await fetch('/api/status');
+    let d = await r.json();
+    if(d.duration_min) totalDurationSec=d.duration_min*60;
+    updateFileTree(d.files||[]);
+    if(!isConfigTab) buildEditorContent(d);
+    updateProgress(d);
+    updateTerminal(d.logs||[]);
+    updateStatusBar(d);
+
+    if(d.completed && wasRunning){
+      showToast(`✅ 流水线完成！共生成了 ${d.total} 集剧本`);
+    }
+    wasRunning = d.running;
+  }catch(e){console.error(e)}
+}
+
+function he(s){
+  let d=document.createElement('div'); d.textContent=s; return d.innerHTML;
+}
+
+// ═══ MD文件查看器 ═══
+async function viewMdFile(name){
+  let overlay=document.getElementById('mdOverlay');
+  let body=document.getElementById('mdBody');
+  document.getElementById('mdFname').textContent=name;
+  overlay.style.display='flex';
+  body.textContent='加载中...';
+  try{
+    let r=await fetch('/api/file?name='+encodeURIComponent(name));
+    let d=await r.json();
+    if(d.content) body.textContent=d.content;
+    else body.textContent='⚠️ 文件内容为空';
+  }catch(e){
+    body.textContent='❌ 无法加载文件: '+e.message;
+  }
+}
+function closeMdViewer(){
+  document.getElementById('mdOverlay').style.display='none';
+}
+// 点击遮罩关闭
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('mdOverlay').addEventListener('click',function(e){
+    if(e.target===this) closeMdViewer();
+  });
+});
+
+// ═══ 需求视图 ═══
+function buildReqsView(){
+  let html=`<div class="req-panel">`;
+
+  // 整体说明
+  html+=`<div class="req-section">
+    <div class="req-section-title">📋 脚本生成条件总览</div>
+    <div class="req-section-body">
+      每集剧本由 DeepSeek AI 自动生成，包含 <b>8段双章节24秒</b> 格式的完整分镜脚本。<br>
+      输出包含中英文 Seedance 2.0 提示词，可直接导入即梦进行视频生成。<br>
+      <span style="color:#888;font-size:11px">⚠️ 启动前请确认以下素材已就绪</span>
+    </div>
+  </div>`;
+
+  // 必需素材
+  html+=`<div class="req-section">
+    <div class="req-section-title">🔴 必需素材（缺少则无法生成）</div>
+    <div class="req-section-body">
+      <table class="req-table">
+        <tr><th>素材</th><th>说明</th><th>用途</th></tr>
+        <tr><td><span class="req-tag required">必需</span> 共享参数模板.md</td><td>角色设定、世界观、场景风格描述</td><td>构建 System Prompt</td></tr>
+        <tr><td><span class="req-tag required">必需</span> Seedance2.0 提示词规范</td><td>即梦 Seedance 2.0 提示词格式规范</td><td>格式校验 & 参考</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 角色参考图</td><td>企鹅妹妹角色设定图（即梦角色参考）</td><td>图生视频时作为角色锚点</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // 第一场景
+  html+=`<div class="req-section">
+    <div class="req-section-title">🎬 第一章（0-12s）· 第一场景</div>
+    <div class="req-section-body">
+      <table class="req-table">
+        <tr><th>条件</th><th>详情</th></tr>
+        <tr><td>场景设定</td><td>剧本描述的第一个场景（如厨房、客厅、户外等）</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 背景参考</td><td>与场景匹配的背景参考图（可选多角度，最多9张）</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 角色锚点</td><td>上传角色参考图至即梦「全能参考」</td></tr>
+        <tr><td>生成参数</td><td>9:16 | 15s | 图生视频 | 中文+英文提示词</td></tr>
+        <tr><td>提示词格式</td><td>日系萌圆暖柔handheld + 150-250字场景描述 + 4K quality</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // 场景素材流转图 ⭐
+  html+=`<div class="req-section" style="border-color:var(--green)">
+    <div class="req-section-title">🔗 场景素材流转图（首尾帧依赖）</div>
+    <div class="req-section-body">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;font-size:11px">
+        <div style="background:#1a3a2a;padding:8px 12px;border-radius:4px;text-align:center">
+          <div style="color:#4ade80;font-weight:700">🎬 第一场景</div>
+          <div style="color:#888;margin-top:4px">15s 生成</div>
+          <div style="color:#888">输入：角色参考图</br>+ 场景1背景参考</div>
+        </div>
+        <div style="color:var(--green);font-size:20px">➜</div>
+        <div style="background:#2a2a2a;padding:8px 12px;border-radius:4px;text-align:center;border:1px dashed var(--keyword)">
+          <div style="color:var(--keyword);font-weight:700">📸 第一场景尾帧</div>
+          <div style="color:#f44747;margin-top:4px"><span class="req-tag required">必须提取</span></div>
+          <div style="color:#888;font-size:10px;margin-top:4px">作为第二场景</br>首帧参考图</div>
+        </div>
+        <div style="color:var(--green);font-size:20px">➜</div>
+        <div style="background:#1a3a2a;padding:8px 12px;border-radius:4px;text-align:center">
+          <div style="color:#4ade80;font-weight:700">🎬 第二场景</div>
+          <div style="color:#888;margin-top:4px">15s 生成</div>
+          <div style="color:#888">输入：上一场景尾帧</br>+ 新场景背景参考</div>
+        </div>
+      </div>
+      <div style="color:#888;font-size:10px;margin-top:8px;padding:6px 10px;background:#1a1a1a;border-radius:4px">
+        💡 即梦 Seedance 2.0「首尾帧控制」模式：在上传参考图时，将第一场景的最后一帧截图作为第二场景的<b>首帧参考</b>上传，可确保两个场景之间画面连贯无跳变。
+      </div>
+    </div>
+  </div>`;
+
+  // 第二场景 ⭐
+  html+=`<div class="req-section" style="border-color:var(--keyword)">
+    <div class="req-section-title">🎬 第二章（12-24s）· 第二场景 ⚠️ 素材依赖标注</div>
+    <div class="req-section-body">
+      <table class="req-table">
+        <tr><th>条件</th><th>详情</th></tr>
+        <tr><td>场景切换</td><td>必须与第一场景<b>不同</b>（新地点/新时间段/新氛围）</td></tr>
+        <tr><td style="color:#f44747"><span class="req-tag required">必需</span> <b>第一场景尾帧截图</b></td><td>将第一场景生成后的<b>最后一帧画面截图</b>作为第二场景的首帧参考图上传。这是 Seedance 2.0「首尾帧控制」的<b>核心依赖</b>，确保转场无缝。</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 角色参考图</td><td>与第一场景使用<b>同一张</b>角色参考图（保持角色一致性）</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 新场景背景参考</td><td>第二场景需要<b>独立的一套背景参考图</b>（与第一场景不同，最多9张）</td></tr>
+        <tr><td>秒数规则</td><td>段5-8从<b>0s重新计数</b>（不是12s-24s，而是0-3,3-6,6-9,9-12）</td></tr>
+        <tr><td><span class="req-tag optional">可选</span> 转场特效参考</td><td>如需要黑场过渡、闪光转场等效果，可额外上传转场参考图/视频</td></tr>
+        <tr><td>提示词分隔</td><td>两个场景用 <code style="color:var(--keyword)">---</code> 分隔</td></tr>
+        <tr><td>生成参数</td><td>9:16 | 15s | 图生视频 | 首帧=第一场景尾帧</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // 即梦生成参数
+  html+=`<div class="req-section">
+    <div class="req-section-title">🎯 即梦 Seedance 2.0 生成参数</div>
+    <div class="req-section-body">
+      <table class="req-table">
+        <tr><th>参数</th><th colspan="2">第一场景（前15s）</th><th>第二场景（后15s）</th></tr>
+        <tr><td>模型</td><td colspan="2" style="color:var(--green)">Seedance 2.0 Fast VIP</td><td style="color:var(--green)">Seedance 2.0 Fast VIP</td></tr>
+        <tr><td>参考模式</td><td colspan="2" style="color:var(--keyword)">全能参考</td><td style="color:var(--keyword)">全能参考 + 首尾帧控制</td></tr>
+        <tr><td>比例</td><td colspan="2">9:16 竖屏</td><td>9:16 竖屏</td></tr>
+        <tr><td>时长</td><td colspan="2">15s</td><td>15s</td></tr>
+        <tr><td>参考图</td><td style="color:var(--keyword)">角色参考图</td><td style="color:#888">+ 场景1背景参考（最多9张）</td><td style="color:#f44747">角色图 + <b>场景1尾帧</b> + 场景2背景</td></tr>
+        <tr><td>参考视频</td><td colspan="2" style="color:#888">可选（最多3个15s参考视频）</td><td style="color:#888">可选</td></tr>
+        <tr><td>提示词</td><td colspan="2">中文 + 英文 双提示词</td><td>中文 + 英文 双提示词</td></tr>
+        <tr><td>预计耗时</td><td colspan="2">3-7 小时（Fast模式）</td><td>3-7 小时（Fast模式）</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // 注意事项
+  html+=`<div class="req-section">
+    <div class="req-section-title">⚠️ 操作流程 & 注意事项</div>
+    <div class="req-section-body">
+      <b style="color:var(--keyword)">📋 正确操作顺序：</b><br>
+      ① 提交第一场景 → 等待生成完成（3-7小时）<br>
+      ② <b style="color:#f44747">截取第一场景生成的最后一帧画面（尾帧）</b><br>
+      ③ 将尾帧作为第二场景的「首帧参考图」上传<br>
+      ④ 提交第二场景 → 等待生成完成<br><br>
+      <b>铁律：</b><br>
+      • 角色铁律：她是企鹅，不是人类。上肢=鹅黄鳍状短翅膀，无人类手指<br>
+      • 中文提示词必须以「日系萌圆暖柔handheld」开头<br>
+      • 英文提示词必须包含「kawaii penguin girl (human-like anime face, 1:2 neat bangs ahoge, pink & white onesie, yellow flipper wings, webbed feet, penguin body)」，严格禁止使用 beak（鸟喙）<br>
+      • 角色参考图在两个场景中<b>必须使用同一张</b>，确保角色外观一致<br>
+      • <b style="color:#f44747">第一场景尾帧是第二场景的必需输入，不可跳过</b><br>
+      • <b>不能</b>在后台同时提交两个场景——必须先等第一场景完成，再提交第二场景<br>
+      • 生成前请确认 DEEPSEEK_API_KEY 已设置且余额充足
+    </div>
+  </div>`;
+
+  html+=`</div>`;
+  document.getElementById('lineNums').innerHTML='';
+  document.getElementById('editorContent').innerHTML=html;
+}
+
+// ═══ 配置保存 ═══
+let cfgDirty=false;
+function onDurationChange(){
+  let inp=document.getElementById('cfgDuration');
+  if(inp){
+    let v=parseInt(inp.value);
+    if(v<1) inp.value=1;
+    if(v>120) inp.value=120;
+    cfgDirty=true;
+  }
+}
+async function saveConfig(){
+  let inp=document.getElementById('cfgDuration');
+  if(!inp) return;
+  let duration=parseInt(inp.value);
+  if(duration<1||duration>120){showToast('⚠️ 时长需在 1-120 分钟之间');return;}
+  try{
+    let r=await fetch('/api/config',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({duration:duration})
+    });
+    let d=await r.json();
+    if(d.ok){
+      showToast(`✅ 已保存！运行时长为 ${d.duration} 分钟`);
+      cfgDirty=false;
+    }
+  }catch(e){
+    showToast('❌ 保存失败，请确认服务器已启动');
+  }
+}
+function startGen(){
+  // 即时反馈
+  let btn=document.getElementById("tbRun");
+  btn.textContent="▶ Connecting..."; btn.disabled=true;
+  fetch('/api/start',{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      showToast("🚀 流水线已启动...");
+      wasRunning=true;
+      document.getElementById("tbStop").disabled=false;
+      document.getElementById("tbHint").textContent="Running... Ctrl+C to stop";
+      btn.textContent="▶ Run Pipeline";
+    }
+  }).catch(e=>{
+    showToast("❌ 无法连接服务器，请确认已启动 generate_scripts.py");
+    btn.innerHTML='<span class="tb-icon">▶</span> Run Pipeline';
+    btn.disabled=false;
+    console.error("startGen error:", e);
+  });
+}
+function stopGen(){
+  document.getElementById("tbStop").disabled=true;
+  fetch('/api/stop',{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      showToast("⏹ 已终止");
+      document.getElementById("tbRun").disabled=false;
+      document.getElementById("tbHint").textContent="Ctrl+R to start";
+    }
+  }).catch(e=>{
+    showToast("❌ 无法连接服务器");
+    console.error("stopGen error:", e);
+  });
+}
+
+// ═══ 键盘快捷键 ═══
+document.addEventListener('keydown',(e)=>{
+  if(e.ctrlKey && e.key==='r'){
+    e.preventDefault(); startGen(); showToast('Ctrl+R → 启动生成');
+  }
+  if(e.ctrlKey && e.key==='c'){
+    e.preventDefault(); stopGen(); showToast('Ctrl+C → 终止');
+  }
+  if(e.ctrlKey && e.key==='l'){
+    e.preventDefault();
+    let t=document.getElementById('terminalBody');
+    t.scrollTop = t.scrollHeight;
+  }
+});
+
+// ═══ 标签页交互 ═══
+document.getElementById('tabMain').onclick = function(){
+  this.classList.add('active');
+  document.getElementById('tabConfig').classList.remove('active');
+  document.getElementById('tabReqs').classList.remove('active');
+  isConfigTab = false;
+};
+// ── 需求标签页 ──
+document.getElementById('tabReqs').onclick = function(){
+  this.classList.add('active');
+  document.getElementById('tabMain').classList.remove('active');
+  document.getElementById('tabConfig').classList.remove('active');
+  isConfigTab = true;
+  buildReqsView();
+};
+document.getElementById('tabConfig').onclick = function(){
+  this.classList.add('active');
+  document.getElementById('tabMain').classList.remove('active');
+  document.getElementById('tabReqs').classList.remove('active');
+  isConfigTab = true;
+  // 切换到可编辑配置视图
+  let configLines = [
+    `<span class="${'cm'}">/**</span>`,
+    `<span class="${'cm'}"> * Pipeline 配置文件（可编辑）</span>`,
+    `<span class="${'cm'}"> * 修改后点击 💾 保存生效，下次启动时加载</span>`,
+    `<span class="${'cm'}"> */</span>`,``,
+    `<span class="kw">export const</span> <span class="vr">config</span> = {`,
+    `<div class="config-edit">  <span class="vr">duration</span>: <input type="number" id="cfgDuration" value="30" min="1" max="120" onchange="onDurationChange()">,  <span class="${'cm'}">// 运行时长（分钟）</span> <button class="save-btn" onclick="saveConfig()" title="保存设置">💾 保存</button></div>`,
+    `  <span class="vr">model</span>: <span class="${'str'}">'deepseek-chat'</span>,`,
+    `  <span class="vr">maxTokens</span>: <span class="${'nm'}">16000</span>,`,
+    `  <span class="vr">temperature</span>: <span class="${'nm'}">0.8</span>,`,
+    `  <span class="vr">outputDir</span>: <span class="${'str'}">'E:\\\\咕咕嘎嘎\\\\'</span>,`,
+    `  <span class="vr">format</span>: <span class="${'str'}">'8段双章节 · 24s · 9:16竖屏'</span>,`,
+    `  <span class="vr">platform</span>: <span class="${'str'}">'Seedance 2.0 Fast VIP'</span>,`,
+    `  <span class="vr">referenceMode</span>: <span class="${'str'}">'全能参考'</span>,`,
+    `};`,
+  ];
+  let nums='';
+  for(let i=1;i<=configLines.length;i++) nums+=`<span>${i}</span>`;
+  document.getElementById('lineNums').innerHTML = nums;
+  document.getElementById('editorContent').innerHTML = configLines.join('\n');
+  // 从服务器获取当前时长
+  fetch('/api/status').then(r=>r.json()).then(d=>{
+    let inp=document.getElementById('cfgDuration');
+    if(inp && d.duration_min) inp.value=d.duration_min;
+  }).catch(()=>{});
+};
+
+// ═══ 启动 ═══
+poll(); pollTimer = setInterval(poll, 800);
+updateFileTree([]);
+buildEditorContent({total:0,errors:0,running:false,completed:false,remaining:totalDurationSec,current:'待机中'});
+updateProgress({total:0,errors:0,running:false,completed:false,remaining:totalDurationSec});
+document.getElementById("tbRun").disabled=false;
+document.getElementById("tbStop").disabled=true;
+updateTerminal([]);
+updateStatusBar({running:false,completed:false,remaining:totalDurationSec,current:'待机中'});
+</script>
+
+</body>
+</html>

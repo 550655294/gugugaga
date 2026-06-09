@@ -1,4 +1,4 @@
-# Seedance 2.0 标准格式提示词
+﻿# Seedance 2.0 标准格式提示词
 
 > 风格来源：@Sharon Riley / Seedance 2.0 官方案例库
 > 公式：画质前缀 + 主体 + 动作 + 场景 + 光影 + 镜头 + 风格 + 画质 + 技术参数
@@ -28,7 +28,7 @@
 ```
 杰作，最佳品质，超可爱3D萌系CGI动画，流畅丝滑动作。30秒竖屏。
 
-主体：圆滚滚黑白企鹅妹妹——黑色蓬松毛绒外表，圆润纯白腹部如棉花糖。短小翅膀和黄色蹼足，掌心粉嫩肉垫。巨大黄色喙光滑如陶瓷。动漫面孔——黑色齐刘海波波头，翠绿大眼睛四层高光，长睫毛，粉嫩脸颊渐变。冰蓝色芭蕾短裙三层半透明薄纱缀银色雪花亮片，腰间银丝蝴蝶结。白色冰刀鞋。
+主体：圆滚滚黑白企鹅妹妹——黑色蓬松毛绒外表，圆润纯白腹部如棉花糖。鹅黄鳍状短翅膀（企鹅鳍），无人类手指。人形动漫脸（大眼睛、小嘴、人类五官）——黑色齐刘海波波头，翠绿大眼睛四层高光，长睫毛，粉嫩脸颊渐变。冰蓝色芭蕾短裙三层半透明薄纱缀银色雪花亮片，腰间银丝蝴蝶结。白色冰刀鞋。
 
 动作时间线：
 【0-5秒开场】追光打冰面中央，她背对镜头，缓缓抬双臂如芭蕾起手式，冰刀轻点冰面泛涟漪状冰纹。
@@ -50,7 +50,7 @@
 ```
 Masterpiece, best quality, hyper-cute 3D CGI anime animation, smooth fluid motion. 28-second vertical short.
 
-Subject: Adorable chibi penguin-girl — fluffy black body, pure white round belly jiggling with each step. Tiny wings with distinct feather tips, yellow webbed feet with pinkish pads, large yellow beak with ceramic sheen. Anime face: straight black bob (each strand defined), huge sparkling emerald eyes with 4-layer highlights, long lashes, rosy gradient blush. Wearing tiny yellow raincoat with penguin-ear hood flaps, matching yellow polka-dot rain boots.
+Subject: Adorable chibi penguin-girl — fluffy black body, pure white round belly jiggling with each step. Yellow flipper wings (no human fingers), yellow webbed feet. Human-like anime face (big eyes, small mouth, human features): straight black bob (each strand defined), huge sparkling emerald eyes with 4-layer highlights, long lashes, rosy gradient blush. Wearing tiny yellow raincoat with penguin-ear hood flaps, matching yellow polka-dot rain boots, penguin body shape.
 
 Action Timeline:
 [0-5s Opening] She enters frame left on cobblestone path, rain boots soft tapping stones. Holding antique brass lantern with dancing flame casting warm golden glow. Fireflies drift toward lantern, one lands on handle.
@@ -74,9 +74,9 @@ Cinematic depth of field with rack focus. Dreamy blue-gold palette. Soft volumet
 主体：企鹅妹妹在热带海滩——超大圆形墨镜渐变棕到透明，不停从鼻梁滑下用翅膀尖推。米色小草帽插一朵鲜红扶桑花。防晒霜抹满脸白白，鼻梁一道没涂匀白条。挂充气粉红火烈鸟游泳圈，肚子贴企鹅防水创可贴。
 
 动作时间线：
-【0-5秒沙滩埋自己】趴蓝色沙滩垫上，用小塑料铲挖沙盖自己——从脚开始往上，肚子位置堆迷你沙城堡插纸伞小旗。盖到翅膀时嘴叼铲子侧身扬沙。最后只露墨镜和喙在外。寄居蟹爬过，她伸翅膀尖戳蟹壳——被钳子夹住，钻出沙堆炸沙满天飞，疯狂甩翅膀被蟹夹着飞舞。蟹被甩飞空中旋转啪嗒落回原位继续爬走。翅膀尖留蟹钳红印。
-【5-12秒入水恐惧症】站起拍沙——沙粒阳光下闪金光从身上簌簌掉落。戴火烈鸟圈奔海——小碎步圆滚身体左右摇摆。到水边第一波浪花脚踝高她尖叫后跳一米。第二次用脚趾试探水温碰到就缩。第三次闭眼深吸气大喊"gugugaga！！"冲进水里——水只到肚子高。站水中睁眼→困惑→如释重负→得意。叉腰挺肚摆征服大海姿势，侧面浪花偷袭——水拍脸上墨镜冲歪挂喙上。
-【12-20秒沙滩排球灾难】切换沙滩排球网儿童尺寸。她戴火烈鸟圈站左侧摆专业姿势压低重心，但火烈鸟脖子挡视线。球飞来她深吸气起跳——离地三厘米被圈限制，头接球——球弹飞她后翻一圈仰面朝天四脚晃如乌龟。挣扎后像不倒翁左晃右晃终于弹回正面坐起——满脸沙墨镜挂耳草帽扣脸露喙。
+【0-5秒沙滩埋自己】趴蓝色沙滩垫上，用小塑料铲挖沙盖自己——从脚开始往上，肚子位置堆迷你沙城堡插纸伞小旗。盖到翅膀时嘴叼铲子侧身扬沙。最后只露墨镜和嘴在外。寄居蟹爬过，她伸翅膀尖戳蟹壳——被钳子夹住，钻出沙堆炸沙满天飞，疯狂甩翅膀被蟹夹着飞舞。蟹被甩飞空中旋转啪嗒落回原位继续爬走。翅膀尖留蟹钳红印。
+【5-12秒入水恐惧症】站起拍沙——沙粒阳光下闪金光从身上簌簌掉落。戴火烈鸟圈奔海——小碎步圆滚身体左右摇摆。到水边第一波浪花脚踝高她尖叫后跳一米。第二次用脚趾试探水温碰到就缩。第三次闭眼深吸气大喊"gugugaga！！"冲进水里——水只到肚子高。站水中睁眼→困惑→如释重负→得意。叉腰挺肚摆征服大海姿势，侧面浪花偷袭——水拍脸上墨镜冲歪挂嘴上。
+【12-20秒沙滩排球灾难】切换沙滩排球网儿童尺寸。她戴火烈鸟圈站左侧摆专业姿势压低重心，但火烈鸟脖子挡视线。球飞来她深吸气起跳——离地三厘米被圈限制，头接球——球弹飞她后翻一圈仰面朝天四脚晃如乌龟。挣扎后像不倒翁左晃右晃终于弹回正面坐起——满脸沙墨镜挂耳草帽扣脸露嘴。
 【20-30秒日落告别】黄昏——天橙渐变粉到淡紫，太阳海平线剩一半。金色余晖铺遍沙滩海面如熔金镜。她坐毛巾裹白浴巾像拖地长袍，捧敲开的椰子插两根扭扭吸管。身后用贝壳从大到小摆一排。远处帆船驶过船帆染橘红。对夕阳举椰子干杯，转头看镜头——墨镜倒影完美夏日黄昏，灿烂笑："guga！"画面定格。排球被浪冲岸边滚到脚边停。
 
 场景：热带白沙滩沙如糖粉含天然贝壳碎粒闪烁。翡翠色清澈海水岸边浅蓝到深处深蓝，见水下沙纹和小鱼。棕榈树风中摇曳叶影移动。强烈阳光硬朗高反差阴影。热浪产生空气折射微变形远景。水面反射金色光斑形成闪光星海随波浪明灭。
