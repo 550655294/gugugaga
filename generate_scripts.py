@@ -42,7 +42,9 @@ HTML_PATH = WORK_DIR / "generate_scripts_ui.html"
 # ═══ 全局状态 ═══
 _lock = threading.Lock()
 _st = {"running":False,"total":0,"current":"等待启动...","step":"点击按钮开始","logs":[],
-       "remaining":DURATION_MIN*60,"completed":False,"errors":0,"start_time":None}
+       "remaining":DURATION_MIN*60,"completed":False,"errors":0,"start_time":None,
+       "streaming":False,"stream_content":"","stream_ep":0,
+       "validation_errors":[], "failed_count":0}
 _gen_thread = None
 
 def _add_log(msg):
@@ -59,7 +61,7 @@ def get_status():
     # 附加文件列表（不用锁读文件系统）
     try:
         eps = []
-        for f in sorted(WORK_DIR.glob("第*集_*_分镜脚本.md"), reverse=True):
+        for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md"), reverse=True):
             eps.append({"name": f.name, "size": f.stat().st_size})
         d["files"] = eps[:20]
     except Exception:
@@ -83,6 +85,46 @@ def call_api(system_prompt, user_prompt, max_tokens=8192):
     except Exception as e:
         raise RuntimeError(f"API错误: {e}")
 
+def call_api_streaming(system_prompt, user_prompt, on_chunk, max_tokens=8192):
+    """流式调用 DeepSeek API，每收到一个 token 就回调 on_chunk(text)"""
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+    body = {"model": MODEL, "messages": [{"role":"system","content":system_prompt},
+            {"role":"user","content":user_prompt}], "max_tokens": max_tokens,
+            "temperature": 0.8, "stream": True}
+    data = json.dumps(body, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(API_URL, data=data, headers=headers, method="POST")
+    
+    try:
+        with urllib.request.urlopen(req, timeout=600) as resp:
+            buffer = b""
+            while True:
+                chunk = resp.read(1024)
+                if not chunk:
+                    break
+                buffer += chunk
+                # 按行解析 SSE
+                while b"\n" in buffer:
+                    line, buffer = buffer.split(b"\n", 1)
+                    line = line.decode("utf-8", errors="replace").strip()
+                    if not line.startswith("data: "):
+                        continue
+                    data_str = line[6:]
+                    if data_str == "[DONE]":
+                        return
+                    try:
+                        obj = json.loads(data_str)
+                        delta = obj.get("choices", [{}])[0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            on_chunk(content)
+                    except (json.JSONDecodeError, KeyError, IndexError):
+                        pass
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode('utf-8','replace')
+        raise RuntimeError(f"HTTP {e.code}: {err_body}")
+    except Exception as e:
+        raise RuntimeError(f"API错误: {e}")
+
 # ═══ 上下文加载 ═══
 def _read(fname): 
     fp = WORK_DIR / fname
@@ -90,160 +132,271 @@ def _read(fname):
 
 def get_episodes():
     eps = []
-    for f in sorted(WORK_DIR.glob("第*集_*_分镜脚本.md")):
-        m = re.match(r'第(\d+)集_(.+)_分镜脚本\.md', f.name)
-        if m: eps.append((int(m.group(1)), m.group(2)))
+    for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
+        m = re.match(r'脚本(\d+)_分镜脚本\.md', f.name)
+        if m: eps.append((int(m.group(1)), m.group(1)))
     return eps
 
 def next_ep_num():
     eps = get_episodes()
-    return max(n for n,_ in eps) + 1 if eps else 24
+    return max(n for n,_ in eps) + 1 if eps else 1
 
 def used_themes():
-    return {t for _,t in get_episodes()}
+    """从操作卡/提示词中提取实质主题关键词，避免 AI 重复"""
+    themes = set()
+    for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
+        try:
+            c = f.read_text(encoding="utf-8")
+            keyword = ""
+            # 优先：开场首帧描述（包含地点+核心道具+场景）
+            m = re.search(r'[🎬]\s*开场首帧[^\n]*\n[^\n]*[：:]\s*(.+?)(?:→|$)', c)
+            if m:
+                keyword = m.group(1).strip()
+            # 备选：背景参考图行（包含场景地点）
+            if not keyword:
+                m = re.search(r'[🏙]\s*背景参考图[^\n]*[：:]\s*(.+?)(?:，|。|$)', c)
+                if m:
+                    keyword = m.group(1).strip()
+            # 兜底：中文提示词第一句（0-3s段首行）
+            if not keyword:
+                m = re.search(r'（0-3s）：[^\n]{0,200}', c)
+                if m:
+                    text = m.group().replace('（0-3s）：日系萌圆暖柔handheld。', '').strip()
+                    keyword = text[:60]
+            if keyword:
+                themes.add(keyword[:80])  # 截取前80字作为主题指纹
+        except Exception:
+            pass
+    return themes
+
+def validate_script(content, ep_num):
+    """校验生成内容是否通过18项自检，返回 (passed, failures)"""
+    failures = []
+    checks = [
+        # (编号, 描述, 正则/检查函数, 是正则则预期True)
+        ("1", "文件第一行不能是『---』", lambda c: not c.lstrip().startswith("---")),
+        ("2", "包含📋 第一场景生成操作卡", lambda c: "第一场景生成操作卡" in c or "第一场景 生成操作卡" in c),
+        ("3", "包含📋 第二场景生成操作卡", lambda c: "第二场景生成操作卡" in c or "第二场景 生成操作卡" in c),
+        ("4", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
+        ("5", "包含中文提示词", lambda c: "中文提示词" in c),
+        ("6", "包含英文提示词", lambda c: "英文提示词" in c),
+        ("7", "包含⚠️ 角色铁律", lambda c: "角色铁律" in c),
+        ("8", "包含自检清单", lambda c: "自检清单" in c and "✅" in c),
+        ("9", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
+        ("10", "英文无『beak』", lambda c: _no_beak_in_en_section(c)),
+        ("11", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
+        ("12", "中文段数≥5段", lambda c: len(re.findall(r'（\d+[–\-]\d+s）', c)) >= 5),
+        ("13", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
+    ]
+    
+    for num, desc, check_fn in checks:
+        if not check_fn(content):
+            failures.append(f"#{num} {desc}")
+    
+    # 非致命警告：不一定失败但提示
+    warnings = []
+    if len(content) < 2000:
+        warnings.append("⚠️ 内容过短（<2000字），可能不完整")
+    if "gltf" not in content.lower() and "kawaii" not in content:
+        warnings.append("⚠️ 英文段可能缺失或格式异常")
+    
+    passed = len(failures) == 0
+    return passed, failures, warnings
+
+def _no_beak_in_en_section(content):
+    """检查英文提示词部分是否不含 beak"""
+    # 找到英文提示词部分
+    en_section_match = re.search(r'英文提示词.*?$(.+?)(?:^---|\Z)', content, re.DOTALL | re.MULTILINE)
+    if en_section_match:
+        en_text = en_section_match.group(1).lower()
+        return "beak" not in en_text
+    return True  # 没找到英文段，不算失败
+
+def _iron_law_before_prompts(content):
+    """检查角色铁律是否出现在中文提示词标题之后、分段开始之前"""
+    # 角色铁律应该在中文提示词部分出现
+    cn_section = re.search(r'中文提示词.*?(?=英文提示词)', content, re.DOTALL)
+    if cn_section:
+        cn_text = cn_section.group()
+        return "角色铁律" in cn_text
+    return True
+
+def _no_buck_passing_in_ops(content):
+    """检查操作卡区域（排除自检清单）是否无甩锅措辞"""
+    # 切除自检清单及其后内容，只检查前面的操作卡
+    checklist_idx = content.find("自检清单")
+    if checklist_idx > 0:
+        check_content = content[:checklist_idx]
+    else:
+        check_content = content
+    # 排除「未出现"用户自行判断"」这类表述的假阳性
+    # 真正需要拦截的是操作卡正文里真实的甩锅语句
+    banned = ["用户自行判断", "根据实际情况", "待定"]
+    for phrase in banned:
+        idx = check_content.find(phrase)
+        if idx >= 0:
+            # 检查上下文：如果前后有「未出现」「不写」「没有」等否定词，跳过
+            context_before = check_content[max(0, idx-15):idx]
+            context_after = check_content[idx+len(phrase):idx+len(phrase)+15]
+            negations = ["未出现", "不写", "没有", "不含", "不应", "禁止"]
+            if any(n in context_before or n in context_after for n in negations):
+                continue
+            return False
+    return True
 
 def recent_scripts(n=2):
     eps = sorted(get_episodes(), key=lambda x: x[0], reverse=True)[:n]
     texts = []
-    for num, title in sorted(eps):
-        fp = WORK_DIR / f"第{num}集_{title}_分镜脚本.md"
+    for num, _ in sorted(eps):
+        fp = WORK_DIR / f"脚本{num:03d}_分镜脚本.md"
         if fp.exists():
             c = fp.read_text(encoding="utf-8")
             if len(c) > 15000: c = c[:4000] + "\n\n...(中间省略)...\n\n" + c[-4000:]
-            texts.append(f"=== 参考第{num}集 ===\n{c}")
+            texts.append(f"=== 参考脚本{num:03d} ===\n{c}")
     return "\n\n".join(texts)
 
 # ═══ 生成逻辑 ═══
 def build_system_prompt():
     shared = _read("共享参数模板.md")[:3000]
     spec = _read("Seedance2.0_提示词规范_校验版.txt")
+    full_spec = _read("咕嘎生成规范文档.md")
     themes = "、".join(sorted(used_themes()))
     refs = recent_scripts(2)
     
     return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。
 
-## 角色设定
+## ⭐⭐⭐ 完整生成规范（最高优先级，逐项对照执行）⭐⭐⭐
+{full_spec}
+
+## 补充材料（动态变化，不在规范文档中）
+### 角色设定
 {shared}
 
-## 提示词规范
+### 提示词规范（Seedance 2.0 官方）
 {spec}
 
-## 已用主题(请避开): {themes}
+### 已用主题(请避开): {themes}
 
-## 参考剧本
-{refs}
-
-## 输出格式（严格遵循）
-输出完整的 Markdown 分镜脚本，包含以下所有部分：
-
-# 🐧 第 N 集：标题（24秒 · 双章节）
-> 共享参数见 `共享参数模板.md`
-**一句话：** 一句话故事梗概
-| 段 | 秒 | 拟声词 | 语调情绪 | 音效 |
-（8段表格）
-
-# 🎯 第一章：章名（0-12s）
-## 🎬 段 1（0-3s）：标题
-（100-200字详细分镜描述 + 拟声词情绪说明）
-...段2(3-6s)、段3(6-9s)、段4(9-12s)...
-
-# 🎯 第二章：章名（12-24s）
-## 🎬 段 5（12-15s）：标题
-...段6(15-18s)、段7(18-21s)、段8(21-24s)...
-**【收尾】** 收尾画面
-
-## 📦 素材需求清单（⚠️ 必须输出，放在提示词之前）
-	（根据本集具体内容填写，禁止写占位符）
-| 场景 | 必需素材 | 说明 |
-|------|---------|------|
-| 第一场景（0-12s） | 角色参考图 | 企鹅妹妹标准角色设定图（全身+面部特写） |
-| 第一场景（0-12s） | 场景背景参考图 | [填入具体场景，如：温馨客厅沙发区] |
-| 第一场景（0-12s） | 额外道具参考 | [关键道具名称，无则写"无需"] |
-| 第二场景（12-24s） | 角色参考图 | 与第一场景同一张 |
-| 第二场景（12-24s） | 场景背景参考图 | [填入具体场景] |
-| 第二场景（12-24s） | ⚠️ 是否需要第一场景尾帧 | 场景连续→"需要，作为首帧参考上传"；切换新场景→"不需要" |
-| 第二场景（12-24s） | 额外道具参考 | [有则列出，无则写"无需"] |
-| 全局 | 转场方式 | [直接切换/黑场过渡/特效转场/尾帧衔接] |
-
-## 中文提示词（即梦 Seedance 2.0）
-```
-> ⚠️ 角色铁律：她是企鹅，不是人类。上肢=鹅黄鳍状短翅膀（企鹅鳍），无人类手指/手掌/指关节。所有"握、抓、伸、抱、捂"动作由鳍状翅膀完成，没有五指分开的动作。
-
-（0-3s）：日系萌圆暖柔handheld。...150-250字...natural motion，画面流畅不抖动，面部清晰不变形，人体结构正常，cinematic 4K quality, 电影质感，无模糊无闪烁。
-（3-6s）：日系萌圆暖柔handheld。...
-（6-9s）：日系萌圆暖柔handheld。...
-（9-12s）：日系萌圆暖柔handheld。...
----
-（0-3s）：日系萌圆暖柔handheld。...（第二场景重新从0s计数）
-（3-6s）：...
-（6-9s）：...
-（9-12s）：...
-【收尾】日系萌圆暖柔handheld。...
-```
-
-## 英文提示词（即梦 Seedance 2.0）
-```
-段1（0-3s）：Japanese cute rounded warm soft handheld slight camera shake sway. kawaii penguin girl (human-like anime face, 1:2 neat bangs ahoge, pink &amp; white onesie, yellow flipper wings, webbed feet, penguin body)...80-150 words..., cinematic 4K quality.
-段2（3-6s）：...
-...
-段8（21-24s）：...
-[Closing] ...
-```
-
-> ⚠️ 英文提示词中禁止出现 "beak"（鸟喙）这个词——因为角色面部是人形日系动漫脸（大眼睛、小嘴、人类五官），不是动物脸。"webbed feet" 可以保留，因为角色确实是企鹅身体，有黄色蹼足。
-
-## 规则
-1. 新主题不能与已用主题重复。故事围绕日常生活展开，有笑点有反转
-2. 角色一致性：妹妹是企鹅身体造型（鳍状短翅膀无手指），但面部是人形日系动漫脸（大眼睛、小嘴、人类五官），不是动物脸
-3. 每段情绪递进，最后段有暖心反转/笑点
-4. 中文提示词开头固定"日系萌圆暖柔handheld"
-5. 英文提示词必须包含"kawaii penguin girl (human-like anime face, 1:2 neat bangs ahoge, pink &amp; white onesie, yellow flipper wings, webbed feet, penguin body)"，严格禁止使用 beak（鸟喙）这个词
-6. 第二场景秒数从0重新计数，用---分隔两场景
-7. 中文提示词开头必须有角色铁律⚠️
-8. 直接输出完整Markdown，不要任何省略
-9. 素材需求清单必须根据本集剧本的具体内容填写场景/道具/转场，不能写占位符。此清单在输出中必须出现，位置在第二章之后、中文提示词之前"""
+### 参考资料（已生成剧本的格式参考）
+{refs}"""
 
 def generate_one():
     global _st
-    # 检查是否被手动停止
-    with _lock:
-        if not _st["running"]:
-            return False
-    ep_num = next_ep_num()
-    with _lock: _st["current"] = f"第{ep_num}集生成中..."
-    _add_log(f"📝 开始生成第{ep_num}集...")
+    MAX_RETRIES = 3
     
-    try:
-        with _lock: _st["step"] = "调用 DeepSeek API..."
-        _add_log("🤖 请求 DeepSeek API...")
-        
-        sys_prompt = build_system_prompt()
-        user_prompt = f"请创作第{ep_num}集的完整分镜脚本（8段双章节24秒格式）。\n\n⚠️ 严格要求：\n1. 新主题（不能是已有主题）+ 有笑点有反转\n2. 完整中英文提示词（即梦 Seedance 2.0）\n3. 前15秒/后15秒合并提示词\n4. 📦 素材需求清单（位置在第二章之后、中文提示词之前，根据本集剧本填写具体场景/道具/转场，禁止占位符）\n5. 即梦生成参数\n\n直接输出完整 Markdown，不要任何省略。"
-        
-        response = call_api(sys_prompt, user_prompt, 8192)
-        _add_log("✅ API响应完成")
-        
-        # 提取标题
-        m = re.search(r'第\s*\d+\s*集[：:]\s*(.+?)[（\n]', response)
-        title = m.group(1).strip() if m else f"待命名{ep_num}"
-        title = re.sub(r'[\\/:*?"<>|]', '', title).strip().rstrip('.')
-        
-        # 保存
-        fname = f"第{ep_num}集_{title}_分镜脚本.md"
-        (WORK_DIR / fname).write_text(response, encoding="utf-8")
-        
+    for attempt in range(1, MAX_RETRIES + 1):
+        # 检查是否被手动停止
         with _lock:
-            _st["total"] += 1
-            _st["step"] = f"已保存: {fname}"
-            _st["current"] = f"第{ep_num}集: {title}"
-        _add_log(f"💾 保存: {fname}")
-        _add_log(f"🎉 第{ep_num}集《{title}》完成!")
-        return True
-    except Exception as e:
-        with _lock: _st["errors"] += 1
-        _add_log(f"❌ 失败: {e}")
-        with _lock: _st["step"] = f"错误: {str(e)[:80]}"
-        return False
+            if not _st["running"]:
+                return False
+        
+        ep_num = next_ep_num()
+        with _lock:
+            _st["current"] = f"脚本{ep_num:03d}生成中..."
+            _st["streaming"] = True
+            _st["stream_content"] = ""
+            _st["stream_ep"] = ep_num
+            _st["validation_errors"] = []
+        
+        if attempt == 1:
+            _add_log(f"📝 开始生成脚本{ep_num:03d}...")
+        else:
+            _add_log(f"🔄 重试第{attempt}次 生成脚本{ep_num:03d}...")
+        
+        full_content_chunks = []  # try 外部初始化，确保 except 可访问
+        
+        try:
+            with _lock: _st["step"] = "调用 DeepSeek API（流式）..."
+            _add_log("🤖 请求 DeepSeek API（实时流式输出）...")
+            
+            sys_prompt = build_system_prompt()
+            user_prompt = f"请生成脚本{ep_num:03d}的即梦提交内容。\n\n⚠️ 逐项对照「完整生成规范」执行，不得跳过任何规则。\n1. 内部构思完整8段故事（不输出分镜描述），直接输出第一场景操作卡+第二场景操作卡+参数+提示词\n2. 新主题（不能是已有主题）+ 有笑点有反转\n3. 中文每段 180-280 字 × 英文每段 80-150 词 × 六大要素全覆盖\n4. 📋 操作卡中AI替用户判断道具分级（需参考图/仅描述/跨场景），直接给出结论，不写\"用户自行判断\"\n5. 固定前提（角色图/生成参数）不在操作卡中重复\n6. 角色铁律放在每个场景标题下面（不用 blockquote 的 >），两场景各一份\n7. **文件第一行禁止输出 `---`**（会被 Markdown 解析为 YAML 前言隐藏内容）\n8. 即梦生成参数 + 完整中英文提示词\n9. 输出完成后对照规范自检清单逐项确认\n\n直接输出，不要省略。"
+            
+            def on_chunk(text):
+                full_content_chunks.append(text)
+                with _lock:
+                    _st["stream_content"] = ''.join(full_content_chunks)
+            
+            call_api_streaming(sys_prompt, user_prompt, on_chunk, 8192)
+            response = ''.join(full_content_chunks)
+            
+            with _lock: _st["streaming"] = False
+            _add_log(f"✅ 流式响应完成（{len(response)}字）")
+            
+            # ═══ 校验 ═══
+            passed, failures, warnings = validate_script(response, ep_num)
+            
+            if not passed:
+                # 保存到失败脚本/
+                fail_dir = WORK_DIR / "失败脚本"
+                fail_dir.mkdir(exist_ok=True)
+                ts = datetime.now().strftime("%m%d_%H%M")
+                fail_name = f"脚本{ep_num:03d}_校验失败_{ts}_{len(failures)}项.md"
+                fail_path = fail_dir / fail_name
+                fail_path.write_text(response, encoding="utf-8")
+                
+                fail_detail = "、".join(failures[:5])
+                with _lock:
+                    _st["validation_errors"] = failures
+                    _st["failed_count"] += 1
+                _add_log(f"⚠️ 校验未通过（{len(failures)}项）: {fail_detail}")
+                _add_log(f"📁 已保存到 失败脚本/{fail_name}")
+                if warnings:
+                    for w in warnings:
+                        _add_log(w)
+                
+                if attempt < MAX_RETRIES:
+                    _add_log(f"🔄 {5}秒后重试（{attempt}/{MAX_RETRIES}）...")
+                    time.sleep(5)
+                    continue
+                else:
+                    _add_log(f"❌ 已达最大重试次数，放弃脚本{ep_num:03d}")
+                    with _lock: _st["errors"] += 1
+                    return False
+            
+            # ═══ 通过校验，正常保存 ═══
+            if warnings:
+                for w in warnings:
+                    _add_log(w)
+            
+            fname = f"脚本{ep_num:03d}_分镜脚本.md"
+            (WORK_DIR / fname).write_text(response, encoding="utf-8")
+            
+            with _lock:
+                _st["total"] += 1
+                _st["step"] = f"已保存: {fname}"
+                _st["current"] = f"脚本{ep_num:03d}"
+                _st["validation_errors"] = []
+            _add_log(f"💾 保存: {fname} ✅ 校验通过")
+            return True
+            
+        except Exception as e:
+            with _lock:
+                _st["streaming"] = False
+            
+            # API调用异常：尝试保存不完整内容到失败脚本
+            if full_content_chunks:
+                partial = ''.join(full_content_chunks)
+                if len(partial) > 200:
+                    fail_dir = WORK_DIR / "失败脚本"
+                    fail_dir.mkdir(exist_ok=True)
+                    ts = datetime.now().strftime("%m%d_%H%M")
+                    fail_name = f"脚本{ep_num:03d}_API中断_{ts}.md"
+                    (fail_dir / fail_name).write_text(partial, encoding="utf-8")
+                    _add_log(f"📁 API中断，已保存片段到 失败脚本/{fail_name}")
+            
+            _add_log(f"❌ 失败: {e}")
+            with _lock: _st["step"] = f"错误: {str(e)[:80]}"
+            
+            if attempt < MAX_RETRIES:
+                _add_log(f"🔄 {10}秒后重试（{attempt}/{MAX_RETRIES}）...")
+                time.sleep(10)
+                continue
+            else:
+                with _lock: _st["errors"] += 1
+                return False
+    
+    return False
 
 # ═══ 主循环 ═══
 def gen_loop():
@@ -295,7 +448,8 @@ def start_gen():
         if _st["running"]: return
         _st.update(running=True,completed=False,total=0,errors=0,logs=[],
                    remaining=DURATION_MIN*60,step="启动中...",current="初始化...",
-                   start_time=time.time())
+                   start_time=time.time(),streaming=False,stream_content="",stream_ep=0,
+                   validation_errors=[], failed_count=0)
     _gen_thread = threading.Thread(target=gen_loop, daemon=True)
     _gen_thread.start()
 
@@ -430,16 +584,30 @@ def main():
     print(f"按下 Ctrl+C 停止服务器")
     print("-" * 50)
 
-    # 后台线程开浏览器（等服务器确认就绪后再弹）
+    # 后台线程开浏览器（等服务器确认就绪后再弹），优先Chrome
     def _open_browser():
         time.sleep(0.5)
-        # 方法1: os.startfile（Windows原生）
+        # 方法1: 自动查找 Chrome 浏览器
+        chrome_candidates = [
+            os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+        ]
+        for chrome in chrome_candidates:
+            if os.path.exists(chrome):
+                try:
+                    subprocess.Popen([chrome, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    print(f"   ✓ 已用 Chrome 打开浏览器")
+                    return
+                except Exception:
+                    continue
+        # 方法2: 系统默认浏览器（兜底）
         try:
             os.startfile(url)
             return
         except Exception:
             pass
-        # 方法2: cmd /c start
+        # 方法3: cmd /c start（最终兜底）
         try:
             subprocess.Popen(['cmd', '/c', 'start', url])
         except Exception:
