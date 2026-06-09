@@ -67,7 +67,7 @@ def get_status():
     return d
 
 # ═══ DeepSeek API ═══
-def call_api(system_prompt, user_prompt, max_tokens=32000):
+def call_api(system_prompt, user_prompt, max_tokens=8192):
     headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
     body = {"model": MODEL, "messages": [{"role":"system","content":system_prompt},
             {"role":"user","content":user_prompt}], "max_tokens": max_tokens, "temperature": 0.8}
@@ -78,7 +78,8 @@ def call_api(system_prompt, user_prompt, max_tokens=32000):
             result = json.loads(resp.read().decode("utf-8"))
             return result["choices"][0]["message"]["content"]
     except urllib.error.HTTPError as e:
-        raise RuntimeError(f"HTTP {e.code}: {e.read().decode('utf-8','replace')}")
+        err_body = e.read().decode('utf-8','replace')
+        raise RuntimeError(f"HTTP {e.code}: {err_body}")
     except Exception as e:
         raise RuntimeError(f"API错误: {e}")
 
@@ -219,7 +220,7 @@ def generate_one():
         sys_prompt = build_system_prompt()
         user_prompt = f"请创作第{ep_num}集的完整分镜脚本（8段双章节24秒格式）。\n\n⚠️ 严格要求：\n1. 新主题（不能是已有主题）+ 有笑点有反转\n2. 完整中英文提示词（即梦 Seedance 2.0）\n3. 前15秒/后15秒合并提示词\n4. 📦 素材需求清单（位置在第二章之后、中文提示词之前，根据本集剧本填写具体场景/道具/转场，禁止占位符）\n5. 即梦生成参数\n\n直接输出完整 Markdown，不要任何省略。"
         
-        response = call_api(sys_prompt, user_prompt, 32000)
+        response = call_api(sys_prompt, user_prompt, 8192)
         _add_log("✅ API响应完成")
         
         # 提取标题
