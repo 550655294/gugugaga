@@ -9,3 +9,10 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+.codebuddy/
+
+# Junk
+$null
+
+# Runtime outputs
+尾帧截图/

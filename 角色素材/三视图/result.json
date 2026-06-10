@@ -1,0 +1,1 @@
+{"stdout": "{\n  \"raw_result\": {\n    \"error\": \"concurrent slot limit exceeded (2) for dimension hy-image-v3: concurrency limit exceeded\"\n  }\n}\n", "stderr": "[INFO] Starting image generation...\n[INFO] Submitting generation request...\n", "code": 0}
