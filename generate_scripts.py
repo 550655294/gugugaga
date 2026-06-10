@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-🐧 咕咕嘎嘎 剧本自动生成器 v1.3
-DeepSeek AI 驱动 · 30分钟持续产出 · 人手互动+第二角色 · Web可视化界面
+🐧 咕咕嘎嘎 剧本自动生成器 v1.4
+DeepSeek AI 驱动 · 智能均衡轮换 · 失败反馈修正 · 30分钟持续产出
 访问 http://localhost:8765 查看控制面板
 """
 
@@ -169,6 +169,46 @@ def used_themes():
             pass
     return themes
 
+def analyze_usage_stats():
+    """分析已生成脚本的模式/角色使用统计，智能均衡轮换"""
+    mode_counts = {"A_大手": 0, "B_第二角色": 0, "C_独角戏": 0}
+    char_counts = {"Doro": 0, "哈基蜂": 0, "小黄鸡": 0}
+    char_episodes = {"Doro": [], "哈基蜂": [], "小黄鸡": []}
+    
+    for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
+        try:
+            c = f.read_text(encoding="utf-8")
+            ep_m = re.match(r'脚本(\d+)', f.name)
+            ep_num = int(ep_m.group(1)) if ep_m else 0
+            
+            # 检测模式
+            has_hand = bool(re.search(r'(人手|人的手|手指|hand|五指|大手)', c))
+            has_chick = bool(re.search(r'(小黄鸡|chick)', c))
+            has_doro = bool(re.search(r'(Doro|doro|死鱼眼|白色短发)', c))
+            has_hachi = bool(re.search(r'(哈基蜂|Hachi|bee|蜜蜂)', c))
+            
+            if has_doro:
+                mode_counts["B_第二角色"] += 1
+                char_counts["Doro"] += 1
+                char_episodes["Doro"].append(ep_num)
+            elif has_hachi:
+                mode_counts["B_第二角色"] += 1
+                char_counts["哈基蜂"] += 1
+                char_episodes["哈基蜂"].append(ep_num)
+            elif has_chick:
+                mode_counts["B_第二角色"] += 1
+                char_counts["小黄鸡"] += 1
+                char_episodes["小黄鸡"].append(ep_num)
+            elif has_hand:
+                mode_counts["A_大手"] += 1
+            else:
+                mode_counts["C_独角戏"] += 1
+        except Exception:
+            pass
+    
+    total = max(sum(mode_counts.values()), 1)
+    return mode_counts, char_counts, char_episodes, total
+
 def validate_script(content, ep_num):
     """校验生成内容是否通过18项自检，返回 (passed, failures)"""
     failures = []
@@ -274,31 +314,57 @@ def build_system_prompt():
     full_spec = _read("咕嘎生成规范文档.md")
     themes = "、".join(sorted(used_themes()))
     refs = recent_scripts(2)
+    mode_counts, char_counts, char_episodes, total = analyze_usage_stats()
     
     # 规范文档存在且有内容时才插入，否则跳过
     spec_section = ""
     if full_spec and full_spec.strip():
         spec_section = f"\n## ⭐⭐⭐ 完整生成规范（最高优先级，逐项对照执行）⭐⭐⭐\n{full_spec}\n"
     
+    # 智能模式推荐：计算各模式缺口，引导 AI 均衡
+    a_ratio = mode_counts["A_大手"] / max(total, 1)
+    b_ratio = mode_counts["B_第二角色"] / max(total, 1)
+    c_ratio = mode_counts["C_独角戏"] / max(total, 1)
+    
+    # 选最缺的模式
+    mode_suggestions = []
+    if a_ratio < 0.4: mode_suggestions.append(f"「大手入镜」(已用{mode_counts['A_大手']}/{total}集，偏少→优先)")
+    if b_ratio < 0.25: mode_suggestions.append(f"「第二角色」(已用{mode_counts['B_第二角色']}/{total}集，偏少→优先)")
+    if c_ratio < 0.15: mode_suggestions.append(f"「独角戏」(已用{mode_counts['C_独角戏']}/{total}集，偏少→优先)")
+    if not mode_suggestions: mode_suggestions.append("随机选择，保持多样性")
+    
+    # 选最缺的第二角色
+    min_char = min(char_counts, key=char_counts.get)
+    char_hint = f"（推荐选 {min_char}，该角色仅出场 {char_counts[min_char]} 次）"
+    
     return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。{spec_section}
+## 📊 智能均衡（每次生成时自动分析，确保不偏科）
+
+当前已生成 {total} 集，各模式使用统计：
+- 🖐 大手入镜：{mode_counts['A_大手']} 集（{a_ratio:.0%}）
+- 👫 第二角色：{mode_counts['B_第二角色']} 集（{b_ratio:.0%}）
+- 🐧 独角戏：{mode_counts['C_独角戏']} 集（{c_ratio:.0%}）
+
+角色出场：Doro={char_counts['Doro']}次 哈基蜂={char_counts['哈基蜂']}次 小黄鸡={char_counts['小黄鸡']}次
+
+👉 本集建议：{', '.join(mode_suggestions)}
+👉 第二角色 {char_hint}
+
 ## 🔥 互动模式要求（强制执行）
 
-你是"独角戏"编剧，但独角戏不等于只有一个角色！
+你是"独角戏"编剧，但独角戏不等于只有一个角色！根据上面的统计数据智能选择模式，优先补缺口。
 
-### 模式A：「我的大手」入镜互动（约50%剧集必须使用）
+### 模式A：「我的大手」入镜互动
 - 一只温暖的人类大手从画面下方/侧面自然伸入，不露脸
 - 手做动作：递东西、挠痒、摸头、拿走零食、扶她一把……
-- 妹妹对手的反应是剧情的核心驱动力
-- 英文提示词中描述 hand 时，直接写 "a warm human hand reaches in from the right side of frame"
 - ⚠️ 注意：人类的手有手指，妹妹的鳍没有手指——两者区分清楚
 
-### 模式B：第二角色出场（约30%剧集可选使用）
-- 从角色池中随机选 1 个：🤖 Doro / 🐝 哈基蜂 / 🐥 小黄鸡（各约33%，均匀轮换）
-- 每个角色的外观和性格见共享参数模板
-- 英文提示词中要包含对应角色的标准英文描述
+### 模式B：第二角色出场
+- 从角色池中选：🤖 Doro / 🐝 哈基蜂 / 🐥 小黄鸡
+- 优先选用率最低的角色（见上方统计）
 - ⚠️ 出场时需要描述两个角色的相对位置和互动
 
-### 模式C：纯独角戏（约20%剧集）
+### 模式C：纯独角戏
 - 只有妹妹一个人，适合内心戏、独处卖萌
 
 ### ⚡ 交互铁律
@@ -308,7 +374,6 @@ def build_system_prompt():
 - 哈基蜂 → 蜜蜂身体，无手，用翅膀和身体表达 ⚠️
 - 小黄鸡 → 没有手，用嘴啄和蹦跶 ⚠️
 - 每集至少要有一次"意外/反转"——预期被打破才有笑点
-- 角色的出场要自然，服务于喜剧冲突
 
 ## 补充材料（动态变化，不在规范文档中）
 ### 角色设定
@@ -325,6 +390,7 @@ def build_system_prompt():
 def generate_one():
     global _st
     MAX_RETRIES = 3
+    prev_failures = []  # 记住上次校验失败的原因，用于重试反馈
     
     for attempt in range(1, MAX_RETRIES + 1):
         # 检查是否被手动停止
@@ -352,7 +418,17 @@ def generate_one():
             _add_log("🤖 请求 DeepSeek API（实时流式输出）...")
             
             sys_prompt = build_system_prompt()
-            user_prompt = f"请生成脚本{ep_num:03d}的即梦提交内容。\n\n⚠️ 逐项对照「完整生成规范」执行，不得跳过任何规则。\n\n## 🔥 互动模式（随机选择一种，不要每次都纯独角戏）\n- A. 我的大手入镜（优先，50%概率）：设计手与妹妹的趣味互动\n- B. 第二角色出场（30%概率）：从 Doro / 哈基蜂 / 小黄鸡 中随机选1个，均匀轮换，不要总用同一个\n- C. 纯独角戏（20%概率）：妹妹独处卖萌\n\n## 📋 生成规则\n1. 内部构思完整8段故事（不输出分镜描述），直接输出第一场景操作卡+第二场景操作卡+参数+提示词\n2. 新主题（不能是已有主题）+ 有笑点有反转\n3. 中文每段 180-280 字 × 英文每段 80-150 词 × 六大要素全覆盖\n4. 📋 操作卡中AI替用户判断道具分级（需参考图/仅描述/跨场景），直接给出结论，不写\"用户自行判断\"\n5. 固定前提（角色图/生成参数）不在操作卡中重复\n6. 角色铁律放在每个场景标题下面（不用 blockquote 的 >），两场景各一份。铁律内容要区分：妹妹=鳍状翅膀无手指 / 人类的手=正常五指 / Doro=小人形有手 / 哈基蜂=蜜蜂无手 / 小黄鸡=毛球无手\n7. **文件第一行禁止输出 `---`**（会被 Markdown 解析为 YAML 前言隐藏内容）\n8. 即梦生成参数 + 完整中英文提示词（有手或第二角色时，提示词中要描述其动作和外观）\n9. 输出完成后对照规范自检清单逐项确认\n10. 如果有第二角色出场，素材需求清单中要注明「⚠️ 第二角色：[角色名]参考图」\n\n直接输出，不要省略。"
+            
+            # 构建用户指令：如果有之前失败的原因，明确告知 AI 修正
+            retry_feedback = ""
+            if prev_failures:
+                retry_feedback = f"""
+## ⚠️ 上次生成校验失败，本次必须修正以下问题：
+{chr(10).join(f'- {f}' for f in prev_failures)}
+
+请特别注意这些项的修正，确保全部通过校验。"""
+            
+            user_prompt = f"请生成脚本{ep_num:03d}的即梦提交内容。\n\n⚠️ 逐项对照「完整生成规范」执行，不得跳过任何规则。{retry_feedback}\n\n## 🔥 互动模式（根据上方统计数据智能选择，优先补缺口）\n- A. 我的大手入镜：设计手与妹妹的趣味互动\n- B. 第二角色出场：从 Doro / 哈基蜂 / 小黄鸡 中选（优先用最少出场的角色）\n- C. 纯独角戏：妹妹独处卖萌\n\n## 📋 生成规则\n1. 内部构思完整8段故事（不输出分镜描述），直接输出第一场景操作卡+第二场景操作卡+参数+提示词\n2. 新主题（不能是已有主题）+ 有笑点有反转\n3. 中文每段 180-280 字 × 英文每段 80-150 词 × 六大要素全覆盖\n4. 📋 操作卡中AI替用户判断道具分级（需参考图/仅描述/跨场景），直接给出结论，不写\"用户自行判断\"\n5. 固定前提（角色图/生成参数）不在操作卡中重复\n6. 角色铁律放在每个场景标题下面（不用 blockquote 的 >），两场景各一份。铁律内容要区分：妹妹=鳍状翅膀无手指 / 人类的手=正常五指 / Doro=小人形有手 / 哈基蜂=蜜蜂无手 / 小黄鸡=毛球无手\n7. **文件第一行禁止输出 `---`**（会被 Markdown 解析为 YAML 前言隐藏内容）\n8. 即梦生成参数 + 完整中英文提示词（有手或第二角色时，提示词中要描述其动作和外观）\n9. 输出完成后对照规范自检清单逐项确认\n10. 如果有第二角色出场，素材需求清单中要注明「⚠️ 第二角色：[角色名]参考图」\n\n直接输出，不要省略。"
             
             def on_chunk(text):
                 full_content_chunks.append(text)
@@ -387,8 +463,11 @@ def generate_one():
                     for w in warnings:
                         _add_log(w)
                 
+                # 🔥 记住失败原因，下次重试时反馈给 AI
+                prev_failures = failures[:]
+                
                 if attempt < MAX_RETRIES:
-                    _add_log(f"🔄 {5}秒后重试（{attempt}/{MAX_RETRIES}）...")
+                    _add_log(f"🔄 {5}秒后重试（{attempt}/{MAX_RETRIES}，将反馈失败原因给AI）...")
                     time.sleep(5)
                     continue
                 else:
