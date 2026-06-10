@@ -275,11 +275,12 @@ def build_system_prompt():
     themes = "、".join(sorted(used_themes()))
     refs = recent_scripts(2)
     
-    return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。
-
-## ⭐⭐⭐ 完整生成规范（最高优先级，逐项对照执行）⭐⭐⭐
-{full_spec}
-
+    # 规范文档存在且有内容时才插入，否则跳过
+    spec_section = ""
+    if full_spec and full_spec.strip():
+        spec_section = f"\n## ⭐⭐⭐ 完整生成规范（最高优先级，逐项对照执行）⭐⭐⭐\n{full_spec}\n"
+    
+    return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。{spec_section}
 ## 🔥 互动模式要求（强制执行）
 
 你是"独角戏"编剧，但独角戏不等于只有一个角色！
