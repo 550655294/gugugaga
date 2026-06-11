@@ -299,8 +299,6 @@ def recent_scripts(n=2):
 
 # ═══ 生成逻辑 ═══
 def build_system_prompt():
-    shared = _read("共享参数模板.md")[:3000]
-    spec = _read("Seedance2.0_提示词规范_校验版.txt")
     full_spec = _read("咕嘎生成规范文档.md")
     themes = "、".join(sorted(used_themes()))
     refs = recent_scripts(2)
@@ -335,12 +333,6 @@ def build_system_prompt():
 👉 本集建议：{', '.join(mode_suggestions)}
 
 ## 补充材料（动态数据）
-
-### 角色设定
-{shared}
-
-### 提示词规范（Seedance 2.0 官方）
-{spec}
 
 ### 已用主题(请避开): {themes}
 
