@@ -486,13 +486,37 @@ def main():
     print(f"按下 Ctrl+C 停止")
     print("-" * 50)
 
-    import threading
+    import threading, webbrowser
     def open_browser():
-        time.sleep(0.5)
+        # 等待服务器就绪
+        for _ in range(20):
+            time.sleep(0.3)
+            try:
+                import urllib.request
+                urllib.request.urlopen(f"http://localhost:{PORT}/api/status", timeout=2)
+                break
+            except Exception:
+                pass
+
+        url = f"http://localhost:{PORT}"
+        # 方案1：webbrowser（最可靠）
         try:
-            os.startfile(f"http://localhost:{PORT}")
-        except Exception:
-            pass
+            webbrowser.open(url, new=2)
+            print(f"✅ 浏览器已打开: {url}")
+            return
+        except Exception as e:
+            print(f"⚠️  webbrowser 失败: {e}")
+
+        # 方案2：os.startfile（Windows 专用）
+        try:
+            os.startfile(url)
+            print(f"✅ 浏览器已打开: {url}")
+            return
+        except Exception as e:
+            print(f"⚠️  os.startfile 失败: {e}")
+
+        # 方案3：手动提示
+        print(f"\n❌ 自动打开浏览器失败，请手动打开: {url}")
 
     threading.Thread(target=open_browser, daemon=True).start()
 
