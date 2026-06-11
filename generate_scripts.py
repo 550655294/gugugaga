@@ -157,11 +157,12 @@ def used_themes():
                 m = re.search(r'[🏙]\s*背景参考图[^\n]*[：:]\s*(.+?)(?:，|。|$)', c)
                 if m:
                     keyword = m.group(1).strip()
-            # 兜底：中文提示词第一句（0-3s段首行）
+            # 兜底：中文提示词第一句（0-3s段首行），去掉时间标记和画风前缀
             if not keyword:
-                m = re.search(r'（0-3s）：[^\n]{0,200}', c)
+                m = re.search(r'（0-3s）：(.{10,200})', c)
                 if m:
-                    text = m.group().replace('（0-3s）：日系萌圆暖柔handheld。', '').strip()
+                    # 去掉画风前缀（如"日系萌圆暖柔handheld。"），保留实质性内容
+                    text = re.sub(r'^[\w\u4e00-\u9fff]+handheld[。.]', '', m.group(1)).strip()
                     keyword = text[:60]
             if keyword:
                 themes.add(keyword[:80])  # 截取前80字作为主题指纹
