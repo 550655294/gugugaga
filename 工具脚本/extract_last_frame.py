@@ -499,15 +499,7 @@ def main():
                 pass
 
         url = f"http://localhost:{PORT}"
-        # 方案1：直接用 Windows cmd 打开默认浏览器（最可靠）
-        try:
-            subprocess.run(["cmd", "/c", "start", url], shell=True, timeout=5)
-            print(f"✅ 浏览器已打开: {url}")
-            return
-        except Exception:
-            pass
-
-        # 方案2：os.startfile
+        # 方案1：os.startfile（Windows ShellExecute，最直接）
         try:
             os.startfile(url)
             print(f"✅ 浏览器已打开: {url}")
@@ -515,7 +507,15 @@ def main():
         except Exception:
             pass
 
-        # 方案3：webbrowser 模块
+        # 方案2：cmd /c start（独立进程，不依赖 Python 环境）
+        try:
+            subprocess.run(f'cmd /c start "" "{url}"', shell=True, timeout=5)
+            print(f"✅ 浏览器已打开: {url}")
+            return
+        except Exception:
+            pass
+
+        # 方案3：webbrowser 模块（跨平台通用）
         try:
             import webbrowser
             webbrowser.open(url, new=2, autoraise=True)
@@ -524,7 +524,7 @@ def main():
         except Exception:
             pass
 
-        # 方案4：手动提示
+        # 兜底：手动提示
         print(f"\n❌ 自动打开浏览器失败，请手动打开: {url}")
 
     threading.Thread(target=open_browser, daemon=True).start()
