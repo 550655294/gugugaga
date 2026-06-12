@@ -486,7 +486,7 @@ def main():
     print(f"按下 Ctrl+C 停止")
     print("-" * 50)
 
-    import threading, webbrowser
+    import threading
     def open_browser():
         # 等待服务器就绪
         for _ in range(20):
@@ -499,23 +499,32 @@ def main():
                 pass
 
         url = f"http://localhost:{PORT}"
-        # 方案1：webbrowser（最可靠）
+        # 方案1：直接用 Windows cmd 打开默认浏览器（最可靠）
         try:
-            webbrowser.open(url, new=2)
+            subprocess.run(["cmd", "/c", "start", url], shell=True, timeout=5)
             print(f"✅ 浏览器已打开: {url}")
             return
-        except Exception as e:
-            print(f"⚠️  webbrowser 失败: {e}")
+        except Exception:
+            pass
 
-        # 方案2：os.startfile（Windows 专用）
+        # 方案2：os.startfile
         try:
             os.startfile(url)
             print(f"✅ 浏览器已打开: {url}")
             return
-        except Exception as e:
-            print(f"⚠️  os.startfile 失败: {e}")
+        except Exception:
+            pass
 
-        # 方案3：手动提示
+        # 方案3：webbrowser 模块
+        try:
+            import webbrowser
+            webbrowser.open(url, new=2, autoraise=True)
+            print(f"✅ 浏览器已打开: {url}")
+            return
+        except Exception:
+            pass
+
+        # 方案4：手动提示
         print(f"\n❌ 自动打开浏览器失败，请手动打开: {url}")
 
     threading.Thread(target=open_browser, daemon=True).start()
