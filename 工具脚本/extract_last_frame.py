@@ -13,7 +13,7 @@ from urllib.parse import unquote, parse_qs
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-WORK_DIR = Path(__file__).parent.resolve()
+WORK_DIR = Path(__file__).parent.parent.resolve()
 PORT = 8766
 OUTPUT_DIR = WORK_DIR / "尾帧截图"
 OUTPUT_DIR.mkdir(exist_ok=True)

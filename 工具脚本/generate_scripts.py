@@ -11,7 +11,9 @@ from datetime import datetime, timedelta
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # ═══ 配置 ═══
-WORK_DIR = Path(__file__).parent.resolve()
+ROOT_DIR = Path(__file__).parent.parent.resolve()
+WORK_DIR = ROOT_DIR  # 分镜脚本、失败脚本、.env 都在项目根目录
+TOOL_DIR = Path(__file__).parent.resolve()
 DURATION_MIN = 30
 PORT = 8765
 API_URL = "https://api.deepseek.com/v1/chat/completions"
@@ -37,7 +39,7 @@ _load_env()
 API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 DURATION_MIN_LOCK = threading.Lock()
 
-HTML_PATH = WORK_DIR / "generate_scripts_ui.html"
+HTML_PATH = TOOL_DIR / "generate_scripts_ui.html"
 
 # ═══ 全局状态 ═══
 _lock = threading.Lock()
@@ -305,7 +307,7 @@ def recent_scripts(n=2):
 
 # ═══ 生成逻辑 ═══
 def build_system_prompt():
-    full_spec = _read("咕嘎生成规范文档.md")
+    full_spec = _read("项目文档/咕嘎生成规范文档.md")
     themes = "、".join(sorted(used_themes()))
     refs = recent_scripts(2)
     mode_counts, char_counts, char_episodes, total = analyze_usage_stats()
@@ -646,7 +648,7 @@ def main():
         print("  🔁 或者直接双击「启动剧本生成器.bat」")
         print("     首次运行会交互式引导你输入")
         print()
-        print("  📖 详细说明见 README_脚本说明.md")
+        print("  📖 详细说明见 项目文档/README_脚本说明.md")
         print("=" * 60)
         sys.exit(1)
     

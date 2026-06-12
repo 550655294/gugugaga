@@ -2,9 +2,9 @@
 chcp 65001 >nul
 title 咕咕嘎嘎剧本生成器
 
-rem ---- 自动定位脚本所在目录 ----
-set "SCRIPT_DIR=%~dp0"
-cd /d "%SCRIPT_DIR%"
+rem ---- 自动定位项目根目录（bat 在 工具脚本/ 下，根目录是上级） ----
+set "TOOL_DIR=%~dp0"
+cd /d "%TOOL_DIR%\.."
 
 echo.
 echo   ========================================
@@ -105,6 +105,6 @@ echo   服务器就绪后会自动打开浏览器
 echo   按 Ctrl+C 停止
 echo.
 
-%PYTHON% -u generate_scripts.py
+%PYTHON% -u "工具脚本\generate_scripts.py"
 
 pause
