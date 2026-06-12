@@ -133,7 +133,7 @@ def _read(fname):
 def get_episodes():
     eps = []
     for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
-        m = re.match(r'脚本(\d+)_分镜脚本\.md', f.name)
+        m = re.match(r'脚本(\d+)_.*分镜脚本\.md', f.name)
         if m: eps.append((int(m.group(1)), m.group(1)))
     return eps
 
@@ -148,13 +148,13 @@ def used_themes():
         try:
             c = f.read_text(encoding="utf-8")
             keyword = ""
-            # 优先：开场首帧描述（包含地点+核心道具+场景）
-            m = re.search(r'[🎬]\s*开场首帧[^\n]*\n[^\n]*[：:]\s*(.+?)(?:→|$)', c)
+            # 优先：开场首帧描述（表格行格式：| 🔴 必须 | 🎬 开场首帧 | 描述... |）
+            m = re.search(r'🎬\s*开场首帧\s*\|\s*(.+?)(?:\s*\|)', c)
             if m:
                 keyword = m.group(1).strip()
-            # 备选：背景参考图行（包含场景地点）
+            # 备选：背景参考图行（表格行格式：| 🟡 建议 | 🏙 背景参考图 | 描述... |）
             if not keyword:
-                m = re.search(r'[🏙]\s*背景参考图[^\n]*[：:]\s*(.+?)(?:，|。|$)', c)
+                m = re.search(r'🏙\s*背景参考图\s*\|\s*(.+?)(?:\s*\|)', c)
                 if m:
                     keyword = m.group(1).strip()
             # 兜底：中文提示词第一句（0-3s段首行），去掉时间标记和画风前缀
@@ -217,7 +217,7 @@ def validate_script(content, ep_num):
         ("5", "包含中文提示词", lambda c: "中文提示词" in c),
         ("6", "包含英文提示词", lambda c: "英文提示词" in c),
         ("7", "包含⚠️ 角色铁律", lambda c: "角色铁律" in c),
-        ("8", "包含自检清单", lambda c: "自检清单" in c and "✅" in c),
+        ("8", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
         ("9", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
         ("10", "英文无『beak』", lambda c: _no_beak_in_en_section(c)),
         ("11", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
@@ -295,7 +295,7 @@ def _no_buck_passing_in_ops(content):
 def recent_scripts(n=2):
     eps = sorted(get_episodes(), key=lambda x: x[0], reverse=True)[:n]
     texts = []
-    for num, _ in sorted(eps):
+    for num, _ in eps:
         fp = WORK_DIR / f"脚本{num:03d}_分镜脚本.md"
         if fp.exists():
             c = fp.read_text(encoding="utf-8")
@@ -655,8 +655,8 @@ def main():
         print("请确保 generate_scripts_ui.html 在同一个目录")
         sys.exit(1)
     
+    HTTPServer.allow_reuse_address = True  # 必须在实例化前设置，防止端口残留占用
     server = HTTPServer(("0.0.0.0", PORT), Handler)
-    server.allow_reuse_address = True  # 防止上次残留占用端口
     print(f"🐧 咕咕嘎嘎剧本生成器已启动")
     url = f"http://localhost:{PORT}"
     print(f"🌐 浏览器即将自动打开: {url}")
