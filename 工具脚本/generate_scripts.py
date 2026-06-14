@@ -244,20 +244,17 @@ def validate_script(content, ep_num):
         ("3", "(v4.4) 只有一张操作卡，没有『第一场景』/『第二场景』分开的操作卡", lambda c: not ("第一场景生成操作卡" in c and "第二场景生成操作卡" in c)),
         ("4", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
         ("5", "包含中文提示词", lambda c: "中文提示词" in c),
-        ("6", "包含英文提示词", lambda c: "英文提示词" in c),
-        ("7", "包含⚠️ 角色铁律", lambda c: "角色铁律" in c),
-        ("8", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
-        ("9", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
-        ("10", "英文无『beak』", lambda c: _no_beak_in_en_section(c)),
-        ("11", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
-        ("12", "中文段数≥4段", lambda c: _check_segment_count(c)),
-        ("13", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
-        ("14", "(v4.4) 不拆分场景：无『场景1』『场景2』标题", lambda c: not (re.search(r'场景[12]（', c) and re.search(r'场景[12]\(', c))),
-        ("15", "(v4.5) @引用融入正文：中文含『主体严格参考@图片1』", lambda c: "主体严格参考@图片1" in c),
-        ("16", "(v4.5) @引用融入正文：英文含『subject strictly references @image1』", lambda c: "subject strictly references @image1" in c),
-        ("17", "(v4.5) 废除独立@行：不含『📎 @图1』残留", lambda c: "📎 @图1" not in c),
-        ("18", "(v4.6) 格式一致性：双短场景（有【场景一】）→ 必须有【场景二】", lambda c: _v46_format_consistency(c)),
-        ("19", "(v4.6) 格式一致性：单长场景（无【场景一】）→ 必须有格式B/连续叙事", lambda c: _v46_long_has_formatb(c)),
+        ("6", "包含⚠️ 角色铁律", lambda c: "角色铁律" in c),
+        ("7", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
+        ("8", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
+        ("9", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
+        ("10", "中文段数≥4段", lambda c: _check_segment_count(c)),
+        ("11", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
+        ("12", "(v4.4) 不拆分场景：无『场景1』『场景2』标题", lambda c: not (re.search(r'场景[12]（', c) and re.search(r'场景[12]\(', c))),
+        ("13", "(v4.5) @引用融入正文：含『主体严格参考@图片1』", lambda c: "主体严格参考@图片1" in c),
+        ("14", "(v4.5) 废除独立@行：不含『📎 @图1』残留", lambda c: "📎 @图1" not in c),
+        ("15", "(v4.6) 格式一致性：双短场景（有【场景一】）→ 必须有【场景二】", lambda c: _v46_format_consistency(c)),
+        ("16", "(v4.6) 格式一致性：单长场景（无【场景一】）→ 必须有格式B/连续叙事", lambda c: _v46_long_has_formatb(c)),
     ]
     
     for num, desc, check_fn in checks:
@@ -268,32 +265,9 @@ def validate_script(content, ep_num):
     warnings = []
     if len(content) < 2000:
         warnings.append("⚠️ 内容过短（<2000字），可能不完整")
-    if "gltf" not in content.lower() and "kawaii" not in content:
-        warnings.append("⚠️ 英文段可能缺失或格式异常")
     
     passed = len(failures) == 0
     return passed, failures, warnings
-
-def _no_beak_in_en_section(content):
-    """检查英文提示词中企鹅是否错误出现了 beak"""
-    en_section_match = re.search(r'英文提示词.*?$(.+?)(?:^---|\Z)', content, re.DOTALL | re.MULTILINE)
-    if en_section_match:
-        en_text = en_section_match.group(1)
-        # 只在提到企鹅的上下文中检查 beak
-        # 如果 beak 和 chick/bird 一起出现，是合法的
-        lines = en_text.split('\n')
-        for line in lines:
-            line_lower = line.lower()
-            if "beak" in line_lower:
-                # 如果同一行有 chick 或 bird 字样，允许
-                if "chick" in line_lower or "bird" in line_lower:
-                    continue
-                # 如果同一行有 penguin 字样，报错
-                if "penguin" in line_lower:
-                    return False
-                # 默认：如果出现了 beak，且不在 chick 语境中，报错
-                return False
-    return True  # 没找到英文段，不算失败
 
 def _iron_law_before_prompts(content):
     """检查角色铁律是否出现在中文提示词标题之后、分段开始之前"""
@@ -438,7 +412,7 @@ def build_system_prompt():
 你的输出结尾必须包含以下两个部分，顺序固定：
 
 ### ✅ 必须在文末输出「自检清单」
-在英文提示词之后、整个回答结尾之前，必须输出一个 ## 自检清单（输出前逐项确认） 段落。自检清单必须包含全部21项（按规范文档 §十三 列出），最后一列全部填 ✅。
+在中文提示词之后、整个回答结尾之前，必须输出一个 ## 自检清单（输出前逐项确认） 段落。自检清单必须包含全部19项（按规范文档 §十三 列出），最后一列全部填 ✅。
 
 ### ✅ 24s整集一次生成（v4.4铁律）
 - 🚫 不要输出「第一场景操作卡」和「第二场景操作卡」→ 只输出一张「📋 生成操作卡」
@@ -449,13 +423,13 @@ def build_system_prompt():
 - 🚫 不要再写独立的 `📎 @图1参考角色外观` 行 → 废除独立@行
 - ✅ 每段提示词正文中写 `主体严格参考@图片1`（放在角色描述前，与「日系萌圆暖柔handheld。」同行）
 - ✅ Agent 模式每段都写（因为每段独立生成，每段都需要锚定角色外观）
-- ✅ 英文每段 Scene 写 `subject strictly references @image1`（放在 kawaii penguin girl 之前）
+- ✅ 格式A（Agent分段）和格式B（连续叙事）共用角色铁律
 
 ### ✅ 场景格式随机（v4.6铁律）⚠️ 
 - 🎲 **随机选择单长场景或双短场景格式**。50%/50%概率。
 - 🚫 **禁止连续3集同一格式**（若前2集同格式则强制切换）
-- ✅ **单长场景**：中文含格式A（Agent分段）+ 格式B（连续叙事），英文Scene连续编号
-- ✅ **双短场景**：中文仅【场景一】【场景二】分段（不输出格式B），英文Scene 1-1/1-2 + 2-1/2-2编组
+- ✅ **单长场景**：中文含格式A（Agent分段）+ 格式B（连续叙事）
+- ✅ **双短场景**：中文仅【场景一】【场景二】分段（不输出格式B）
 - ✅ 两种格式均只输出一张操作卡，均为200积分
 - ✅ 双短场景：场景一建立情境→冲突，场景二承接→转折→收束
 
