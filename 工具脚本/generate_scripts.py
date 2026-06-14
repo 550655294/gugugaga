@@ -207,6 +207,33 @@ def analyze_usage_stats():
     total = max(sum(mode_counts.values()), 1)
     return mode_counts, char_counts, char_episodes, total
 
+def analyze_format_stats():
+    """分析已生成脚本的场景格式使用统计（v4.6 双短/单长随机）"""
+    single_count = 0  # 单长场景 24s×1
+    double_count = 0  # 双短场景 12s×2
+    last_formats = []  # 最近格式序列
+    
+    for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
+        try:
+            c = f.read_text(encoding="utf-8")
+            # 双短格式特征：【场景一】和【场景二】同时出现
+            has_double = "【场景一" in c and "【场景二" in c
+            if has_double:
+                double_count += 1
+                last_formats.append("双短")
+            else:
+                single_count += 1
+                last_formats.append("单长")
+        except Exception:
+            pass
+    
+    total = max(single_count + double_count, 1)
+    # 最近2集格式
+    recent_2 = last_formats[-2:] if len(last_formats) >= 2 else last_formats
+    recent_3 = last_formats[-3:] if len(last_formats) >= 3 else last_formats
+    
+    return single_count, double_count, total, recent_2, recent_3
+
 def validate_script(content, ep_num):
     """校验生成内容是否通过自检清单，返回 (passed, failures)"""
     failures = []
@@ -223,12 +250,14 @@ def validate_script(content, ep_num):
         ("9", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
         ("10", "英文无『beak』", lambda c: _no_beak_in_en_section(c)),
         ("11", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
-        ("12", "中文段数≥4段", lambda c: len(re.findall(r'（\d+[–\-]\d+s）', c)) >= 4),
+        ("12", "中文段数≥4段", lambda c: _check_segment_count(c)),
         ("13", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
         ("14", "(v4.4) 不拆分场景：无『场景1』『场景2』标题", lambda c: not (re.search(r'场景[12]（', c) and re.search(r'场景[12]\(', c))),
         ("15", "(v4.5) @引用融入正文：中文含『主体严格参考@图片1』", lambda c: "主体严格参考@图片1" in c),
         ("16", "(v4.5) @引用融入正文：英文含『subject strictly references @image1』", lambda c: "subject strictly references @image1" in c),
         ("17", "(v4.5) 废除独立@行：不含『📎 @图1』残留", lambda c: "📎 @图1" not in c),
+        ("18", "(v4.6) 格式一致性：双短场景（有【场景一】）→ 必须有【场景二】", lambda c: _v46_format_consistency(c)),
+        ("19", "(v4.6) 格式一致性：单长场景（无【场景一】）→ 必须有格式B/连续叙事", lambda c: _v46_long_has_formatb(c)),
     ]
     
     for num, desc, check_fn in checks:
@@ -298,6 +327,28 @@ def _no_buck_passing_in_ops(content):
             return False
     return True
 
+def _check_segment_count(content):
+    """检查中文段数≥4段（兼容单长和双短格式）"""
+    # 统计所有时间标记段
+    segments = re.findall(r'（\d+[–\-]\d+s）', content)
+    return len(segments) >= 4
+
+def _v46_format_consistency(content):
+    """(v4.6) 如果是双短格式，必须【场景一】和【场景二】成对出现"""
+    has_scene1 = "【场景一" in content
+    has_scene2 = "【场景二" in content
+    if has_scene1:
+        return has_scene2  # 有场景一必须有场景二
+    return True  # 不是双短格式，不检查
+
+def _v46_long_has_formatb(content):
+    """(v4.6) 如果是单长格式（无【场景一】），必须有格式B/连续叙事"""
+    has_scene1 = "【场景一" in content
+    if not has_scene1:
+        # 单长格式：必须有"格式B"或"连续叙事"
+        return "格式B" in content or "连续叙事" in content
+    return True  # 双短格式，不检查此项
+
 def recent_scripts(n=2):
     eps = sorted(get_episodes(), key=lambda x: x[0], reverse=True)[:n]
     texts = []
@@ -315,6 +366,7 @@ def build_system_prompt():
     themes = "、".join(sorted(used_themes()))
     refs = recent_scripts(2)
     mode_counts, char_counts, char_episodes, total = analyze_usage_stats()
+    single_count, double_count, fmt_total, recent_fmts_2, recent_fmts_3 = analyze_format_stats()
     
     # 规范文档存在且有内容时才插入，否则跳过
     spec_section = ""
@@ -333,6 +385,35 @@ def build_system_prompt():
     if c_ratio < 0.15: mode_suggestions.append(f"「独角戏」(已用{mode_counts['C_独角戏']}/{total}集，偏少→优先)")
     if not mode_suggestions: mode_suggestions.append("随机选择，保持多样性")
     
+    # 🔀 v4.6 场景格式随机
+    single_ratio = single_count / max(fmt_total, 1)
+    double_ratio = double_count / max(fmt_total, 1)
+    
+    # 强制切换逻辑：如果最近2集都是同一格式，必须切换
+    force_format = None
+    if len(recent_fmts_2) == 2 and recent_fmts_2[0] == recent_fmts_2[1]:
+        force_format = "双短" if recent_fmts_2[0] == "单长" else "单长"
+    
+    format_instruction = ""
+    if force_format:
+        format_instruction = f"""
+### 🔀 场景格式（v4.6随机铁律）⚠️ 强制切换
+- 🚫 最近2集均为「{recent_fmts_2[0]}」格式
+- ✅ **本集必须使用「{force_format}」格式**（禁止连续3集同一格式）
+- 单长场景 = 24s连续叙事（当前v4.5格式）
+- 双短场景 = 12s+12s双段叙事（【场景一】【场景二】各12s，不输出格式B）
+"""
+    else:
+        preferred = "单长" if single_ratio < double_ratio else "双短"
+        format_instruction = f"""
+### 🔀 场景格式（v4.6随机铁律）⚠️ 随机选择
+当前统计：单长场景 {single_count}/{fmt_total} 集（{single_ratio:.0%}）| 双短场景 {double_count}/{fmt_total} 集（{double_ratio:.0%}）
+最近格式序列: {recent_fmts_3}
+👉 建议优先选「{preferred}」格式（缺口较大），但也可以随机选另一种。禁止连续3集同一格式。
+- 单长场景 = 24s连续叙事（当前v4.5格式），中文含格式A+格式B
+- 双短场景 = 12s+12s双段叙事（【场景一】【场景二】各12s），中文仅分段格式，**不输出格式B**
+"""
+    
     return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。{spec_section}
 ## 📊 智能均衡统计（Python 自动计算，供参考）
 
@@ -344,7 +425,7 @@ def build_system_prompt():
 - 👉 B模式第二角色建议优先选：{'菲比' if char_counts.get('菲比', 0) < char_counts.get('Doro', 0) else 'Doro'}
 
 👉 本集建议：{', '.join(mode_suggestions)}
-
+{format_instruction}
 ## 补充材料（动态数据）
 
 ### 已用主题(请避开): {themes}
@@ -357,32 +438,26 @@ def build_system_prompt():
 你的输出结尾必须包含以下两个部分，顺序固定：
 
 ### ✅ 必须在文末输出「自检清单」
-在英文提示词之后、整个回答结尾之前，必须输出一个 ## 自检清单（输出前逐项确认） 段落。参考格式如下（直接复制到输出末尾即可）：
+在英文提示词之后、整个回答结尾之前，必须输出一个 ## 自检清单（输出前逐项确认） 段落。自检清单必须包含全部21项（按规范文档 §十三 列出），最后一列全部填 ✅。
 
-## 自检清单（输出前逐项确认）
-| # | 检查项 | ✅ |
-|---|--------|-----|
-| 1 | 文件第一行不是 --- | ☐ |
-| 2 | 操作卡完整（角色图+背景+道具分级+角色变体+开场首帧+收尾） | ☐ |
-| 3 | 🎯 即梦生成参数完整（24s×1，200积分） | ☐ |
-| 4 | 中文提示词用「⚠️ 角色铁律」（是"角色铁律"四个字，不能只写"铁律"） | ☐ |
-| 5 | 英文提示词含 VOCALIZATION RULE + ANATOMY RULE | ☐ |
-| 6 | (v4.4) 24s整集一次生成：只有一张操作卡、一个提示词块，不分场景 | ☐ |
-| ... | （继续按规范文档 §十二 列出全部检查项） | ☐ |
-| 最后一列必须全部填 ✅ | ✅ |
-
-### ✅ 24s整集一次生成（v4.4新增铁律）
+### ✅ 24s整集一次生成（v4.4铁律）
 - 🚫 不要输出「第一场景操作卡」和「第二场景操作卡」→ 只输出一张「📋 生成操作卡」
-- 🚫 中文提示词不要分「场景1」「场景2」→ 一个完整的24s块，按动作节奏自然分段
 - 🚫 不要写转场方式、跨场景一致性、尾帧截图
-- ✅ 24s整集一次生成，Agent模式按动作节奏切段（通常4-7段）
+- ✅ 24s总时长不变（单长=24s×1，双短=12s×2），Agent模式按动作节奏切段
 
-### ✅ @引用融入正文（v4.5新增铁律）
+### ✅ @引用融入正文（v4.5铁律）
 - 🚫 不要再写独立的 `📎 @图1参考角色外观` 行 → 废除独立@行
 - ✅ 每段提示词正文中写 `主体严格参考@图片1`（放在角色描述前，与「日系萌圆暖柔handheld。」同行）
 - ✅ Agent 模式每段都写（因为每段独立生成，每段都需要锚定角色外观）
 - ✅ 英文每段 Scene 写 `subject strictly references @image1`（放在 kawaii penguin girl 之前）
-- 🚫 格式B（连续叙事）只需在正文开头写一次
+
+### ✅ 场景格式随机（v4.6铁律）⚠️ 
+- 🎲 **随机选择单长场景或双短场景格式**。50%/50%概率。
+- 🚫 **禁止连续3集同一格式**（若前2集同格式则强制切换）
+- ✅ **单长场景**：中文含格式A（Agent分段）+ 格式B（连续叙事），英文Scene连续编号
+- ✅ **双短场景**：中文仅【场景一】【场景二】分段（不输出格式B），英文Scene 1-1/1-2 + 2-1/2-2编组
+- ✅ 两种格式均只输出一张操作卡，均为200积分
+- ✅ 双短场景：场景一建立情境→冲突，场景二承接→转折→收束
 
 ### ✅ 中文提示词中必须写「⚠️ 角色铁律」（精确四个字）
 规范要求提示词顶部紧跟角色铁律。注意：必须写「⚠️ 角色铁律」，不是「⚠️ 铁律」。
