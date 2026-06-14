@@ -226,6 +226,9 @@ def validate_script(content, ep_num):
         ("12", "中文段数≥4段", lambda c: len(re.findall(r'（\d+[–\-]\d+s）', c)) >= 4),
         ("13", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
         ("14", "(v4.4) 不拆分场景：无『场景1』『场景2』标题", lambda c: not (re.search(r'场景[12]（', c) and re.search(r'场景[12]\(', c))),
+        ("15", "(v4.5) @引用融入正文：中文含『主体严格参考@图片1』", lambda c: "主体严格参考@图片1" in c),
+        ("16", "(v4.5) @引用融入正文：英文含『subject strictly references @image1』", lambda c: "subject strictly references @image1" in c),
+        ("17", "(v4.5) 废除独立@行：不含『📎 @图1』残留", lambda c: "📎 @图1" not in c),
     ]
     
     for num, desc, check_fn in checks:
@@ -373,6 +376,13 @@ def build_system_prompt():
 - 🚫 中文提示词不要分「场景1」「场景2」→ 一个完整的24s块，按动作节奏自然分段
 - 🚫 不要写转场方式、跨场景一致性、尾帧截图
 - ✅ 24s整集一次生成，Agent模式按动作节奏切段（通常4-7段）
+
+### ✅ @引用融入正文（v4.5新增铁律）
+- 🚫 不要再写独立的 `📎 @图1参考角色外观` 行 → 废除独立@行
+- ✅ 每段提示词正文中写 `主体严格参考@图片1`（放在角色描述前，与「日系萌圆暖柔handheld。」同行）
+- ✅ Agent 模式每段都写（因为每段独立生成，每段都需要锚定角色外观）
+- ✅ 英文每段 Scene 写 `subject strictly references @image1`（放在 kawaii penguin girl 之前）
+- 🚫 格式B（连续叙事）只需在正文开头写一次
 
 ### ✅ 中文提示词中必须写「⚠️ 角色铁律」（精确四个字）
 规范要求提示词顶部紧跟角色铁律。注意：必须写「⚠️ 角色铁律」，不是「⚠️ 铁律」。
