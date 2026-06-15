@@ -706,20 +706,11 @@ def generate_one():
             passed, failures, warnings = validate_script(response, ep_num)
             
             if not passed:
-                # 保存到 普通分镜脚本/失败脚本/
-                fail_dir = SCRIPT_DIR / "失败脚本"
-                fail_dir.mkdir(exist_ok=True)
-                ts = datetime.now().strftime("%m%d_%H%M")
-                fail_name = f"脚本{ep_num:03d}_校验失败_{ts}_{len(failures)}项.md"
-                fail_path = fail_dir / fail_name
-                fail_path.write_text(response, encoding="utf-8")
-                
                 fail_detail = "、".join(failures[:5])
                 with _lock:
                     _st["validation_errors"] = failures
                     _st["failed_count"] += 1
-                _add_log(f"⚠️ 校验未通过（{len(failures)}项）: {fail_detail}")
-                _add_log(f"📁 已保存到 失败脚本/{fail_name}")
+                _add_log(f"⚠️ 校验未通过（{len(failures)}项）: {fail_detail}，内容已丢弃")
                 if warnings:
                     for w in warnings:
                         _add_log(w)
@@ -769,16 +760,7 @@ def generate_one():
             with _lock:
                 _st["streaming"] = False
             
-            # API调用异常：尝试保存不完整内容到失败脚本
-            if full_content_chunks:
-                partial = ''.join(full_content_chunks)
-                if len(partial) > 200:
-                    fail_dir = SCRIPT_DIR / "失败脚本"
-                    fail_dir.mkdir(exist_ok=True)
-                    ts = datetime.now().strftime("%m%d_%H%M")
-                    fail_name = f"脚本{ep_num:03d}_API中断_{ts}.md"
-                    (fail_dir / fail_name).write_text(partial, encoding="utf-8")
-                    _add_log(f"📁 API中断，已保存片段到 普通分镜脚本/失败脚本/{fail_name}")
+            # API调用异常：不保存失败片段
             
             _add_log(f"❌ 失败: {e}")
             with _lock: _st["step"] = f"错误: {str(e)[:80]}"
@@ -928,12 +910,6 @@ def generate_battle_one():
             passed, failures, warnings = _validate_battle_script(response, ep_num)
             
             if not passed:
-                fail_dir = BATTLE_SCRIPT_DIR / "失败脚本"
-                fail_dir.mkdir(exist_ok=True)
-                ts = datetime.now().strftime("%m%d_%H%M")
-                fail_name = f"战斗{ep_num:03d}_校验失败_{ts}_{len(failures)}项.md"
-                (fail_dir / fail_name).write_text(response, encoding="utf-8")
-                
                 with _battle_lock:
                     _st_battle["validation_errors"] = failures
                     _st_battle["failed_count"] += 1
@@ -977,15 +953,7 @@ def generate_battle_one():
             with _battle_lock:
                 _st_battle["streaming"] = False
             
-            if full_content_chunks:
-                partial = ''.join(full_content_chunks)
-                if len(partial) > 200:
-                    fail_dir = BATTLE_SCRIPT_DIR / "失败脚本"
-                    fail_dir.mkdir(exist_ok=True)
-                    ts = datetime.now().strftime("%m%d_%H%M")
-                    fail_name = f"战斗{ep_num:03d}_API中断_{ts}.md"
-                    (fail_dir / fail_name).write_text(partial, encoding="utf-8")
-                    _battle_add_log(f"📁 API中断，已保存片段")
+            # API中断：不保存失败片段
             
             _battle_add_log(f"❌ 失败: {e}")
             with _battle_lock: _st_battle["step"] = f"错误: {str(e)[:80]}"
