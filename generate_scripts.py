@@ -5,15 +5,15 @@ DeepSeek AI 驱动 · 纯引擎模式 · 剧情规则全部走规范文档
 访问 http://localhost:8765 查看控制面板
 """
 
-import json, os, re, sys, time, threading, glob, subprocess, urllib.request, urllib.error
+import json, os, re, sys, time, threading, subprocess, urllib.request, urllib.error
 from pathlib import Path
 from datetime import datetime, timedelta
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # ═══ 配置 ═══
-ROOT_DIR = Path(__file__).parent.parent.resolve()
+ROOT_DIR = Path(__file__).parent.resolve()
 WORK_DIR = ROOT_DIR  # 分镜脚本、失败脚本、.env 都在项目根目录
-TOOL_DIR = Path(__file__).parent.resolve()
+TOOL_DIR = ROOT_DIR / "工具脚本"
 DURATION_MIN = 30
 PORT = 8765
 API_URL = "https://api.deepseek.com/v1/chat/completions"
@@ -136,7 +136,7 @@ def get_episodes():
     eps = []
     for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
         m = re.match(r'脚本(\d+)_.*分镜脚本\.md', f.name)
-        if m: eps.append((int(m.group(1)), m.group(1)))
+        if m: eps.append((int(m.group(1)), f.name))
     return eps
 
 def next_ep_num():
@@ -150,8 +150,8 @@ def used_themes():
         try:
             c = f.read_text(encoding="utf-8")
             keyword = ""
-            # 优先：开场首帧描述（表格行格式：| 🔴 必须 | 🎬 开场首帧 | 描述... |）
-            m = re.search(r'🎬\s*开场首帧\s*\|\s*(.+?)(?:\s*\|)', c)
+            # 优先：首帧画面描述（表格行格式：| 🔴 必须 | 🎬 首帧画面 | 描述... |）
+            m = re.search(r'🎬\s*首帧画面\s*\|\s*(.+?)(?:\s*\|)', c)
             if m:
                 keyword = m.group(1).strip()
             # 备选：背景参考图行（表格行格式：| 🟡 建议 | 🏙 背景参考图 | 描述... |）
@@ -159,12 +159,11 @@ def used_themes():
                 m = re.search(r'🏙\s*背景参考图\s*\|\s*(.+?)(?:\s*\|)', c)
                 if m:
                     keyword = m.group(1).strip()
-            # 兜底：中文提示词第一句（0-3s段首行），去掉时间标记和画风前缀
+            # 兜底：中文提示词第一段（段1/【场景一】首行），去掉画风前缀
             if not keyword:
-                m = re.search(r'（0-3s）：(.{10,200})', c)
+                m = re.search(r'(?:段1|【场景一)[：:· ].{10,200}', c, re.DOTALL)
                 if m:
-                    # 去掉画风前缀（如"日系萌圆暖柔handheld。"），保留实质性内容
-                    text = re.sub(r'^[\w\u4e00-\u9fff]+handheld[。.]', '', m.group(1)).strip()
+                    text = re.sub(r'^[\w\u4e00-\u9fff]+\s*handheld[。.]', '', m.group(0)).strip()
                     keyword = text[:60]
             if keyword:
                 themes.add(keyword[:80])  # 截取前80字作为主题指纹
@@ -185,7 +184,7 @@ def analyze_usage_stats():
             ep_num = int(ep_m.group(1)) if ep_m else 0
             
             # 检测模式
-            has_hand = bool(re.search(r'(人手|人的手|手指|hand|五指|大手)', c))
+            has_hand = bool(re.search(r'(人手|人的手|手指|\bhand\b|五指|大手)', c))
             has_doro = bool(re.search(r'(Doro|doro|粉狗|粉色短发|X形面纹)', c))
             has_phoebe = bool(re.search(r'(菲比|Phoebe|phoebe|金发修女|隐海修会|蓝色大眼修女)', c))
             
@@ -208,19 +207,19 @@ def analyze_usage_stats():
     return mode_counts, char_counts, char_episodes, total
 
 def analyze_format_stats():
-    """分析已生成脚本的场景格式使用统计（v4.6 双短/单长随机）"""
+    """分析已生成脚本的场景格式使用统计（v4.17 双段独立/单长随机）"""
     single_count = 0  # 单长场景 24s×1
-    double_count = 0  # 双短场景 12s×2
+    double_count = 0  # 双段独立 12-15s×2
     last_formats = []  # 最近格式序列
     
     for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
         try:
             c = f.read_text(encoding="utf-8")
-            # 双短格式特征：【场景一】和【场景二】同时出现
-            has_double = "【场景一" in c and "【场景二" in c
+            # 双段独立格式特征：📋 场景一操作卡标题（📋 前缀唯一，自检清单不会用此符号）
+            has_double = "📋 场景一操作卡" in c
             if has_double:
                 double_count += 1
-                last_formats.append("双短")
+                last_formats.append("双段独立")
             else:
                 single_count += 1
                 last_formats.append("单长")
@@ -241,20 +240,20 @@ def validate_script(content, ep_num):
         # (编号, 描述, 检查函数)
         ("1", "文件第一行不能是『---』", lambda c: not c.lstrip().startswith("---")),
         ("2", "包含📋 生成操作卡", lambda c: "生成操作卡" in c or "操作卡" in c),
-        ("3", "(v4.4) 只有一张操作卡，没有『第一场景』/『第二场景』分开的操作卡", lambda c: not ("第一场景生成操作卡" in c and "第二场景生成操作卡" in c)),
+        ("3", "(v4.17) 操作卡数量正确：单长=1张 / 双段独立=2张（场景一+场景二）", lambda c: _check_op_card_count(c)),
         ("4", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
         ("5", "包含中文提示词", lambda c: "中文提示词" in c),
         ("6", "包含⚠️ 角色铁律", lambda c: "角色铁律" in c),
         ("7", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
         ("8", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
         ("9", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
-        ("10", "中文段数≥4段", lambda c: _check_segment_count(c)),
+        ("10", "中文段数符合格式：单长≥4段 / 双段独立=2个场景块", lambda c: _check_segment_count(c)),
         ("11", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
-        ("12", "(v4.4) 不拆分场景：无『场景1』『场景2』标题", lambda c: not (re.search(r'场景[12]（', c) and re.search(r'场景[12]\(', c))),
+        ("12", "(v4.17) 场景标记正确：单长无场景标题 / 双段独立有【场景一】【场景二】", lambda c: _check_scene_markers(c)),
         ("13", "(v4.5) @引用融入正文：含『主体严格参考@图片1』", lambda c: "主体严格参考@图片1" in c),
         ("14", "(v4.5) 废除独立@行：不含『📎 @图1』残留", lambda c: "📎 @图1" not in c),
-        ("15", "(v4.6) 格式一致性：双短场景（有【场景一】）→ 必须有【场景二】", lambda c: _v46_format_consistency(c)),
-        ("16", "(v4.6) 格式一致性：单长场景（无【场景一】）→ 必须有格式B/连续叙事", lambda c: _v46_long_has_formatb(c)),
+        ("15", "(v4.17) 格式一致性：双段独立（有【场景一】）→ 【场景一】【场景二】成对出现", lambda c: _v417_format_consistency(c)),
+        ("16", "(v4.17) 格式一致性：单长场景（无【场景一】）→ 必须有格式A+格式B", lambda c: _v417_long_has_dual_format(c)),
         ("17", "(v4.9) 身体部位安全：提示词中无翅膀抓握/捧/舀/呆毛勾取/拖拽等工具化描述", lambda c: _v49_body_safety(c)),
         ("18", "(v4.9) 比喻安全：提示词中无'像XX钩子/精密机械/气球/着火/星星眼✨/开出小花'等危险比喻", lambda c: _v49_metaphor_safety(c)),
     ]
@@ -273,12 +272,12 @@ def validate_script(content, ep_num):
 
 def _iron_law_before_prompts(content):
     """检查角色铁律是否出现在中文提示词标题之后、分段开始之前"""
-    # 角色铁律应该在中文提示词部分出现
-    cn_section = re.search(r'中文提示词.*?(?=英文提示词)', content, re.DOTALL)
+    cn_section = re.search(r'中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
     if cn_section:
         cn_text = cn_section.group()
         return "角色铁律" in cn_text
-    return True
+    # 找不到中文提示词区域，回退到自检清单前的内容（避免自检清单#11「角色铁律在提示词顶部」触发假阳性）
+    return "角色铁律" in _before_checklist(content)
 
 def _no_buck_passing_in_ops(content):
     """检查操作卡区域（排除自检清单）是否无甩锅措辞"""
@@ -303,38 +302,81 @@ def _no_buck_passing_in_ops(content):
             return False
     return True
 
+def _before_checklist(content):
+    """返回自检清单之前的内容，避免自检清单中的元描述（如『已输出场景一操作卡+场景二操作卡』或『中文只有【场景一】【场景二】』）污染格式检测"""
+    idx = content.find("自检清单")
+    if idx > 0:
+        return content[:idx]
+    return content
+
+def _is_dual_scene(content):
+    """判断是否为双段独立格式——仅检查操作卡标题（📋 前缀唯一，自检清单不会用此符号）"""
+    return "📋 场景一操作卡" in _before_checklist(content)
+
+def _check_op_card_count(content):
+    """检查操作卡数量正确：单长=1张 / 双段独立=2张"""
+    is_dual = _is_dual_scene(content)
+    body = _before_checklist(content)
+    has_card1 = "场景一操作卡" in body
+    has_card2 = "场景二操作卡" in body
+    if is_dual:
+        return has_card1 and has_card2  # 双段独立需要两张卡
+    else:
+        return not has_card1 and not has_card2  # 单长不应出现场景分卡标题
+
+def _check_scene_markers(content):
+    """检查场景标记正确：单长无场景标题 / 双段独立有【场景一】【场景二】"""
+    is_dual = _is_dual_scene(content)
+    body = _before_checklist(content)
+    has_scene1 = "【场景一" in body
+    has_scene2 = "【场景二" in body
+    if is_dual:
+        return has_scene1 and has_scene2  # 双段独立必须有两个场景标题
+    else:
+        return not has_scene1 and not has_scene2  # 单长不能有场景标题
+
 def _check_segment_count(content):
-    """检查中文段数≥4段（兼容单长和双短格式）"""
-    # 统计所有时间标记段
-    segments = re.findall(r'（\d+[–\-]\d+s）', content)
-    return len(segments) >= 4
+    """检查段数符合格式：单长≥4段 / 双段独立=2个场景块"""
+    is_dual = _is_dual_scene(content)
+    body = _before_checklist(content)
+    if is_dual:
+        # 双段独立：统计【场景一】【场景二】数量 = 2
+        scene_markers = len(re.findall(r'【场景[一二]', body))
+        return scene_markers >= 2
+    else:
+        # 单长：统计段1/段2/.../收尾段标记
+        segments = re.findall(r'(段\d+|收尾段)', body)
+        return len(segments) >= 4
 
-def _v46_format_consistency(content):
-    """(v4.6) 如果是双短格式，必须【场景一】和【场景二】成对出现"""
-    has_scene1 = "【场景一" in content
-    has_scene2 = "【场景二" in content
-    if has_scene1:
-        return has_scene2  # 有场景一必须有场景二
-    return True  # 不是双短格式，不检查
+def _v417_format_consistency(content):
+    """(v4.17) 如果是双段独立格式，必须【场景一】和【场景二】成对出现"""
+    is_dual = _is_dual_scene(content)
+    if is_dual:
+        body = _before_checklist(content)
+        has_scene1 = "【场景一" in body
+        has_scene2 = "【场景二" in body
+        return has_scene1 and has_scene2
+    return True  # 不是双段独立格式，不检查
 
-def _v46_long_has_formatb(content):
-    """(v4.6) 如果是单长格式（无【场景一】），必须有格式B/连续叙事"""
-    has_scene1 = "【场景一" in content
-    if not has_scene1:
-        # 单长格式：必须有"格式B"或"连续叙事"
-        return "格式B" in content or "连续叙事" in content
-    return True  # 双短格式，不检查此项
+def _v417_long_has_dual_format(content):
+    """(v4.17) 如果是单长格式（无【场景一】），必须有格式A+格式B"""
+    is_dual = _is_dual_scene(content)
+    if not is_dual:
+        # 单长格式：必须有格式A 和 格式B（只在操作卡/提示词区域检查，排除自检清单）
+        body = _before_checklist(content)
+        return "格式A" in body and "格式B" in body
+    return True  # 双段独立格式，不检查此项
 
 def _v49_body_safety(content):
     """(v4.9) 检查提示词中是否包含身体部位工具化的危险描述"""
     # 只在提示词段落中检查（操作卡和自检清单区域可以包含元描述）
     # 提取中文提示词区域
     prompt_section = ""
-    cn_match = re.search(r'中文提示词.*?(?=## 自检清单|## 英文提示词|---\s*\n##)', content, re.DOTALL)
+    cn_match = re.search(r'中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
     if cn_match:
         prompt_section = cn_match.group()
     else:
-        prompt_section = content  # 兜底
+        prompt_section = _before_checklist(content)  # 兜底：至少排除自检清单，避免「星星眼」等危险示例触发误判
     
     # 危险模式：(翅膀/鳍翅/呆毛/蹼足) + (工具化动作)
     dangerous = [
@@ -359,11 +401,11 @@ def _v49_body_safety(content):
 def _v49_metaphor_safety(content):
     """(v4.9) 检查提示词中是否包含危险比喻性描述"""
     prompt_section = ""
-    cn_match = re.search(r'中文提示词.*?(?=## 自检清单|## 英文提示词|---\s*\n##)', content, re.DOTALL)
+    cn_match = re.search(r'中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
     if cn_match:
         prompt_section = cn_match.group()
     else:
-        prompt_section = content
+        prompt_section = _before_checklist(content)  # 兜底：至少排除自检清单，避免「像钩子」「像气球」等危险示例触发误判
     
     # 这些比喻在操作卡/自检清单的说明中出现可以接受，但提示词正文中不能有
     # 检查"像XX"修饰身体部位的模式
@@ -381,8 +423,8 @@ def _v49_metaphor_safety(content):
 def recent_scripts(n=2):
     eps = sorted(get_episodes(), key=lambda x: x[0], reverse=True)[:n]
     texts = []
-    for num, _ in eps:
-        fp = WORK_DIR / f"脚本{num:03d}_分镜脚本.md"
+    for num, fname in eps:
+        fp = WORK_DIR / fname
         if fp.exists():
             c = fp.read_text(encoding="utf-8")
             if len(c) > 15000: c = c[:4000] + "\n\n...(中间省略)...\n\n" + c[-4000:]
@@ -407,12 +449,11 @@ def build_system_prompt():
     b_ratio = mode_counts["B_第二角色"] / max(total, 1)
     c_ratio = mode_counts["C_独角戏"] / max(total, 1)
     
-    # 选最缺的模式
+    # 选最缺的模式（v4.17: B模式「第二角色」已停用，仅统计不推荐）
     mode_suggestions = []
     if a_ratio < 0.4: mode_suggestions.append(f"「大手入镜」(已用{mode_counts['A_大手']}/{total}集，偏少→优先)")
-    if b_ratio < 0.25: mode_suggestions.append(f"「第二角色」(已用{mode_counts['B_第二角色']}/{total}集，偏少→优先)")
     if c_ratio < 0.15: mode_suggestions.append(f"「独角戏」(已用{mode_counts['C_独角戏']}/{total}集，偏少→优先)")
-    if not mode_suggestions: mode_suggestions.append("随机选择，保持多样性")
+    if not mode_suggestions: mode_suggestions.append("随机选择A/C，保持多样性")
     
     # 🔀 v4.6 场景格式随机
     single_ratio = single_count / max(fmt_total, 1)
@@ -421,120 +462,51 @@ def build_system_prompt():
     # 强制切换逻辑：如果最近2集都是同一格式，必须切换
     force_format = None
     if len(recent_fmts_2) == 2 and recent_fmts_2[0] == recent_fmts_2[1]:
-        force_format = "双短" if recent_fmts_2[0] == "单长" else "单长"
+        force_format = "双段独立" if recent_fmts_2[0] == "单长" else "单长"
     
     format_instruction = ""
     if force_format:
         format_instruction = f"""
-### 🔀 场景格式（v4.6随机铁律）⚠️ 强制切换
+### 🔀 场景格式（v4.17随机铁律）⚠️ 强制切换
 - 🚫 最近2集均为「{recent_fmts_2[0]}」格式
 - ✅ **本集必须使用「{force_format}」格式**（禁止连续3集同一格式）
-- 单长场景 = 24s连续叙事（当前v4.5格式）
-- 双短场景 = 12s+12s双段叙事（【场景一】【场景二】各12s，不输出格式B）
+- 单长场景 = 24s连续叙事（含格式A+格式B）
+- 双段独立 = 12-15s×2两段独立连续叙事（【场景一】【场景二】各一段完整叙事，不输出格式A/B）
 """
     else:
-        preferred = "单长" if single_ratio < double_ratio else "双短"
+        preferred = "单长" if single_ratio < double_ratio else "双段独立"
         format_instruction = f"""
-### 🔀 场景格式（v4.6随机铁律）⚠️ 随机选择
-当前统计：单长场景 {single_count}/{fmt_total} 集（{single_ratio:.0%}）| 双短场景 {double_count}/{fmt_total} 集（{double_ratio:.0%}）
+### 🔀 场景格式（v4.17随机铁律）⚠️ 随机选择
+当前统计：单长场景 {single_count}/{fmt_total} 集（{single_ratio:.0%}）| 双段独立 {double_count}/{fmt_total} 集（{double_ratio:.0%}）
 最近格式序列: {recent_fmts_3}
 👉 建议优先选「{preferred}」格式（缺口较大），但也可以随机选另一种。禁止连续3集同一格式。
-- 单长场景 = 24s连续叙事（当前v4.5格式），中文含格式A+格式B
-- 双短场景 = 12s+12s双段叙事（【场景一】【场景二】各12s），中文仅分段格式，**不输出格式B**
+- 单长场景 = 24s连续叙事，中文含格式A（Agent分段）+ 格式B（连续叙事）
+- 双段独立 = 12-15s×2两段独立连续叙事（【场景一】【场景二】各一段完整叙事，不输出格式A/B）
 """
     
-    return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。{spec_section}
+    return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。
+
+⭐⭐⭐ 以下规范文档是你必须逐项对照的唯一规则源。所有剧情规则、格式模板、
+安全铁律、自检清单均在此文档中，不得自行添加或修改规则。⭐⭐⭐
+{spec_section}
+
 ## 📊 智能均衡统计（Python 自动计算，供参考）
 
 当前已生成 {total} 集，各模式使用统计：
 - 🖐 大手入镜：{mode_counts['A_大手']} 集（{a_ratio:.0%}）
 - 👫 第二角色：{mode_counts['B_第二角色']} 集（{b_ratio:.0%}）
 - 🐧 独角戏：{mode_counts['C_独角戏']} 集（{c_ratio:.0%}）
-- 🐶 Doro 已出场 {char_counts.get('Doro', 0)} 次 | ✨ 菲比已出场 {char_counts.get('菲比', 0)} 次
-- 👉 B模式第二角色建议优先选：{'菲比' if char_counts.get('菲比', 0) < char_counts.get('Doro', 0) else 'Doro'}
+- 🐶 Doro 已出场 {char_counts.get('Doro', 0)} 次 | ✨ 菲比已出场 {char_counts.get('菲比', 0)} 次（⚠️ B模式「第二角色」已按 v4.17规范停用，历史统计仅供参考）
 
 👉 本集建议：{', '.join(mode_suggestions)}
 {format_instruction}
+
 ## 补充材料（动态数据）
 
 ### 已用主题(请避开): {themes}
 
 ### 参考资料（已生成剧本的格式参考）
-{refs}
-
-## 🔥🔥🔥 输出强制要求（以下是自动化校验会检查的项，缺一项整集作废）🔥🔥🔥
-
-你的输出结尾必须包含以下两个部分，顺序固定：
-
-### ✅ 必须在文末输出「自检清单」
-在中文提示词之后、整个回答结尾之前，必须输出一个 ## 自检清单（输出前逐项确认） 段落。自检清单必须包含全部21项（按规范文档 §十三 列出），最后一列全部填 ✅。
-
-### ✅ 24s整集一次生成（v4.4铁律）
-- 🚫 不要输出「第一场景操作卡」和「第二场景操作卡」→ 只输出一张「📋 生成操作卡」
-- 🚫 不要写转场方式、跨场景一致性、尾帧截图
-- ✅ 24s总时长不变（单长=24s×1，双短=12s×2），Agent模式按动作节奏切段
-
-### ✅ @引用融入正文（v4.5铁律）
-- 🚫 不要再写独立的 `📎 @图1参考角色外观` 行 → 废除独立@行
-- ✅ 每段提示词正文中写 `主体严格参考@图片1`（放在角色描述前，与「日系萌圆暖柔handheld。」同行）
-- ✅ Agent 模式每段都写（因为每段独立生成，每段都需要锚定角色外观）
-- ✅ 格式A（Agent分段）和格式B（连续叙事）共用角色铁律
-
-### ✅ 场景格式随机（v4.6铁律）⚠️ 
-- 🎲 **随机选择单长场景或双短场景格式**。50%/50%概率。
-- 🚫 **禁止连续3集同一格式**（若前2集同格式则强制切换）
-- ✅ **单长场景**：中文含格式A（Agent分段）+ 格式B（连续叙事）
-- ✅ **双短场景**：中文仅【场景一】【场景二】分段（不输出格式B）
-- ✅ 两种格式均只输出一张操作卡，均为200积分
-- ✅ 双短场景：场景一建立情境→冲突，场景二承接→转折→收束
-
-### ✅ 中文提示词中必须写「⚠️ 角色铁律」（精确四个字）
-规范要求提示词顶部紧跟角色铁律。注意：必须写「⚠️ 角色铁律」，不是「⚠️ 铁律」。
-缺少"角色"两个字会导致自动校验失败。
-
-### 🚨 肢体安全系统（v4.9升级 ⭐最高优先级）
-
-> ⚠️ Seedance 2.0 对任何身体部位的拉伸/变形/工具化/比喻性描述都一概字面执行——全脚本扫描发现44个高风险变形点分布在6个已有脚本中，呆毛仅为冰山一角。
-
-#### 全身三不原则
-- 🔴 **不伸长**：翅膀/呆毛/嘴巴/蹼足/脖子/舌头不得超出自然长度/幅度
-- 🔴 **不当工具**：任何身体部位（除人类大手外）不得当物理工具。严禁翅膀抓握/捧/舀/掀/夹/拍击/扇风，严禁呆毛勾取/拖拽/缠绕，严禁蹼足踢飞/抓取
-- 🔴 **不比喻成物体**：严禁用"像钩子""像精密机械""像气球""像着火""星星眼✨""开出小花""像泄气皮球"等比喻描述身体
-
-#### 各部位速禁表
-| 部位 | 🚫 绝对禁止 |
-|------|-----------|
-| 翅膀 | 伸长 / 抓握 / 捧 / 舀 / 掀 / 夹取 / 拍击 / 扇风 |
-| 呆毛 | 勾取 / 拖拽 / 触碰物品 / 开小花 / 爆炸 / 超过头高½ |
-| 嘴巴 | 伸长突出 / O形嘴 / 无底洞 / 尖牙 |
-| 蹼足 | 抓握物品 / 伸长 / 旋转 / 踢飞 / 足趾分叉 |
-| 腮帮子 | 膨胀超面部30% / 气球化 / 单侧极端鼓胀 |
-| 眼睛 | 瞪到离谱大 / ⭐星星眼 / 高光乱晃 |
-| 身体 | 拉长 / 压扁 / 扭曲 / 比例崩坏 |
-| 头发 | 膨胀炸成蒲公英 / 球形闪电 / 铺散盖脸 |
-
-#### ✅ 替代方案
-- 够不到高处物品 → 跳跃 / 踮脚 / 推椅子（绝不用呆毛/翅膀伸长）
-- 需要操作物体 → 人类大手（模式A）
-- 表达情绪 → 面部表情 + 呆毛微动 + 拟声词 + 翅膀自然姿势
-
-### ⚠️ 比喻性描述防范（v4.9新增）⭐
-- 🚫 **提示词中严禁"像XX""如XX般"修饰身体部位或身体动作**
-- 以下为已知bug比喻，禁止出现：
-  - ❌ "像钩子"→ AI生成钩子 | ✅ "微微弯曲"
-  - ❌ "像精密机械"→ AI生成机械臂 | ✅ "缓缓拖动"（仅适用于人手）
-  - ❌ "像气球"→ AI气球化面部 | ✅ "微微鼓起"
-  - ❌ "开出小花"→ AI生成花朵 | ✅ "顶端微微散开"
-  - ❌ "像着火"→ AI生成火焰 | ✅ "被辣得通红"
-  - ❌ "炸成蒲公英"→ AI生成植物 | ✅ "头发蓬松翘起"
-  - ❌ "像泄气皮球"→ AI身体塌陷 | ✅ "缓缓瘫软"
-  - ❌ "星星眼✨"→ AI生成物理星星 | ✅ "眼睛闪闪发亮"
-
-### ⚠️ 节奏降噪（v4.8新增）
-- 🚫 避免过于吵闹/密集/喧闹的风格。治愈温暖 > 搞笑激烈。
-- ✅ 24s内情绪转折不超过3次（如 平静→急→委屈→满足 已达上限）
-- ✅ 动作以柔和日常为主。禁止多重同步高频动作（如同帧"跳+叫+呆毛弹+腮红变"——应拆散节奏）
-- ✅ 整体基调偏"安静治愈"，不让观众感到视觉疲劳"""
+{refs if refs else '暂无已生成剧本，请按规范文档中的模板输出。'}"""
 
 def generate_one():
     global _st
@@ -574,7 +546,7 @@ def generate_one():
                 fix_instructions = []
                 for f in prev_failures:
                     if "自检清单" in f:
-                        fix_instructions.append(f'- {f} → **必须在英文提示词之后、全文末尾插入「## 自检清单（输出前逐项确认）」段落**，包含 | # | 检查项 | ✅ | 格式的表格，最后一列全填 ✅')
+                        fix_instructions.append(f'- {f} → **必须在中文提示词之后、全文末尾插入「## 自检清单（输出前逐项确认）」段落**，包含 | # | 检查项 | ✅ | 格式的表格，最后一列全填 ✅')
                     elif "角色铁律" in f:
                         fix_instructions.append(f'- {f} → **中文提示词中必须写「⚠️ 角色铁律」四个字，不是「⚠️ 铁律」**。在提示词标题下紧跟此行')
                     else:
@@ -841,8 +813,7 @@ def main():
         print("  💰 费用：很便宜，几块钱能生成几十集剧本")
         print("  💰 充值：https://platform.deepseek.com/top_up")
         print()
-        print("  🔁 或者直接双击「启动剧本生成器.bat」")
-        print("     首次运行会交互式引导你输入")
+        print("  🔁 或者直接双击「启动.bat」重试")
         print()
         print("  📖 详细说明见 项目文档/README_脚本说明.md")
         print("=" * 60)
