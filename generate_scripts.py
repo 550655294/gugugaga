@@ -12,7 +12,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # ═══ 配置 ═══
 ROOT_DIR = Path(__file__).parent.resolve()
-WORK_DIR = ROOT_DIR  # 分镜脚本、失败脚本、.env 都在项目根目录
+WORK_DIR = ROOT_DIR  # .env、项目文档等
+SCRIPT_DIR = ROOT_DIR / "分镜脚本"  # 生成的分镜脚本存放处
 TOOL_DIR = ROOT_DIR / "工具脚本"
 DURATION_MIN = 30
 PORT = 8765
@@ -63,7 +64,7 @@ def get_status():
     # 附加文件列表（不用锁读文件系统）
     try:
         eps = []
-        for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md"), reverse=True):
+        for f in sorted(SCRIPT_DIR.glob("脚本*_分镜脚本.md"), reverse=True):
             eps.append({"name": f.name, "size": f.stat().st_size})
         d["files"] = eps[:20]
     except Exception:
@@ -134,7 +135,8 @@ def _read(fname):
 
 def get_episodes():
     eps = []
-    for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
+    SCRIPT_DIR.mkdir(exist_ok=True)
+    for f in sorted(SCRIPT_DIR.glob("脚本*_分镜脚本.md")):
         m = re.match(r'脚本(\d+)_.*分镜脚本\.md', f.name)
         if m: eps.append((int(m.group(1)), f.name))
     return eps
@@ -148,7 +150,7 @@ def used_themes():
     raw = set()
     noise = {"校验失败","分镜脚本","即梦生成","抖音","标题","简介"}
     
-    for scan_dir in [WORK_DIR]:
+    for scan_dir in [SCRIPT_DIR]:
         if not scan_dir.exists():
             continue
         for f in sorted(scan_dir.glob("*.md")):
@@ -174,7 +176,7 @@ def used_themes():
         themes.add(base.strip().rstrip("_")[:30])
     
     # 兜底：对无关键词的文件名（如脚本001_分镜脚本.md），从文件内标题提取
-    for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
+    for f in sorted(SCRIPT_DIR.glob("脚本*_分镜脚本.md")):
         try:
             first = f.read_text(encoding="utf-8")[:200]
             tm = re.search(r'脚本\d+_(.+?)_分镜脚本', first)
@@ -192,7 +194,7 @@ def analyze_usage_stats():
     char_counts = {"Doro": 0, "菲比": 0}
     char_episodes = {"Doro": [], "菲比": []}
     
-    for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
+    for f in sorted(SCRIPT_DIR.glob("脚本*_分镜脚本.md")):
         try:
             c = f.read_text(encoding="utf-8")
             ep_m = re.match(r'脚本(\d+)', f.name)
@@ -226,7 +228,7 @@ def analyze_format_stats():
     double_count = 0  # 双段独立 12-15s×2
     last_formats = []  # 最近格式序列
     
-    for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
+    for f in sorted(SCRIPT_DIR.glob("脚本*_分镜脚本.md")):
         try:
             c = f.read_text(encoding="utf-8")
             has_double = "📋 场景一操作卡" in c
@@ -407,7 +409,7 @@ def recent_scripts(n=2):
     eps = sorted(get_episodes(), key=lambda x: x[0], reverse=True)[:n]
     texts = []
     for num, fname in eps:
-        fp = WORK_DIR / fname
+        fp = SCRIPT_DIR / fname
         if fp.exists():
             c = fp.read_text(encoding="utf-8")
             if len(c) > 15000: c = c[:4000] + "\n\n...(中间省略)...\n\n" + c[-4000:]
@@ -548,8 +550,8 @@ def generate_one():
             passed, failures, warnings = validate_script(response, ep_num)
             
             if not passed:
-                # 保存到失败脚本/
-                fail_dir = WORK_DIR / "失败脚本"
+                # 保存到 分镜脚本/失败脚本/
+                fail_dir = SCRIPT_DIR / "失败脚本"
                 fail_dir.mkdir(exist_ok=True)
                 ts = datetime.now().strftime("%m%d_%H%M")
                 fail_name = f"脚本{ep_num:03d}_校验失败_{ts}_{len(failures)}项.md"
@@ -596,7 +598,8 @@ def generate_one():
                     fname = f"脚本{ep_num:03d}_{safe}_分镜脚本.md" if safe else f"脚本{ep_num:03d}_分镜脚本.md"
                 else:
                     fname = f"脚本{ep_num:03d}_分镜脚本.md"
-            (WORK_DIR / fname).write_text(response, encoding="utf-8")
+            SCRIPT_DIR.mkdir(exist_ok=True)
+            (SCRIPT_DIR / fname).write_text(response, encoding="utf-8")
             
             with _lock:
                 _st["total"] += 1
@@ -614,12 +617,12 @@ def generate_one():
             if full_content_chunks:
                 partial = ''.join(full_content_chunks)
                 if len(partial) > 200:
-                    fail_dir = WORK_DIR / "失败脚本"
+                    fail_dir = SCRIPT_DIR / "失败脚本"
                     fail_dir.mkdir(exist_ok=True)
                     ts = datetime.now().strftime("%m%d_%H%M")
                     fail_name = f"脚本{ep_num:03d}_API中断_{ts}.md"
                     (fail_dir / fail_name).write_text(partial, encoding="utf-8")
-                    _add_log(f"📁 API中断，已保存片段到 失败脚本/{fail_name}")
+                    _add_log(f"📁 API中断，已保存片段到 分镜脚本/失败脚本/{fail_name}")
             
             _add_log(f"❌ 失败: {e}")
             with _lock: _st["step"] = f"错误: {str(e)[:80]}"
@@ -716,7 +719,7 @@ class Handler(BaseHTTPRequestHandler):
             from urllib.parse import unquote
             raw = self.path.split("?name=", 1)[1]
             fname = unquote(raw)
-            fp = (WORK_DIR / fname).resolve()
+            fp = (SCRIPT_DIR / fname).resolve()
             # 防止路径穿越：确保解析后的路径仍在 WORK_DIR 内
             if not str(fp).startswith(str(WORK_DIR.resolve())):
                 self._json({"error": "非法文件路径"}, 403)
