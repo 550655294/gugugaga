@@ -207,31 +207,25 @@ def analyze_usage_stats():
     return mode_counts, char_counts, char_episodes, total
 
 def analyze_format_stats():
-    """分析已生成脚本的场景格式使用统计（v4.17 双段独立/单长随机）"""
-    single_count = 0  # 单长场景 24s×1
+    """分析已生成脚本的场景格式使用统计（v4.18 统一双段独立）"""
     double_count = 0  # 双段独立 12-15s×2
     last_formats = []  # 最近格式序列
     
     for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
         try:
             c = f.read_text(encoding="utf-8")
-            # 双段独立格式特征：📋 场景一操作卡标题（📋 前缀唯一，自检清单不会用此符号）
             has_double = "📋 场景一操作卡" in c
             if has_double:
                 double_count += 1
                 last_formats.append("双段独立")
-            else:
-                single_count += 1
-                last_formats.append("单长")
         except Exception:
             pass
     
-    total = max(single_count + double_count, 1)
-    # 最近2集格式
+    total = max(double_count, 1)
     recent_2 = last_formats[-2:] if len(last_formats) >= 2 else last_formats
     recent_3 = last_formats[-3:] if len(last_formats) >= 3 else last_formats
     
-    return single_count, double_count, total, recent_2, recent_3
+    return double_count, total, recent_2, recent_3
 
 def validate_script(content, ep_num):
     """校验生成内容是否通过自检清单，返回 (passed, failures)"""
@@ -240,20 +234,19 @@ def validate_script(content, ep_num):
         # (编号, 描述, 检查函数)
         ("1", "文件第一行不能是『---』", lambda c: not c.lstrip().startswith("---")),
         ("2", "包含📋 生成操作卡", lambda c: "生成操作卡" in _before_checklist(c) or "操作卡" in _before_checklist(c)),
-        ("3", "(v4.17) 操作卡数量正确：单长=1张 / 双段独立=2张（场景一+场景二）", lambda c: _check_op_card_count(c)),
+        ("3", "(v4.18) 操作卡数量正确：双段独立必须有场景一+场景二操作卡（2张）", lambda c: _check_op_card_count(c)),
         ("4", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
         ("5", "包含中文提示词", lambda c: "中文提示词" in c),
         ("6", "包含⚠️ 角色铁律", lambda c: "角色铁律" in _before_checklist(c)),
         ("7", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
         ("8", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
         ("9", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
-        ("10", "中文段数符合格式：单长≥4段 / 双段独立=2个场景块", lambda c: _check_segment_count(c)),
+        ("10", "(v4.18) 中文段数：双段独立=【场景一】【场景二】各一段连续叙事", lambda c: _check_segment_count(c)),
         ("11", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
-        ("12", "(v4.17) 场景标记正确：单长无场景标题 / 双段独立有【场景一】【场景二】", lambda c: _check_scene_markers(c)),
+        ("12", "(v4.18) 场景标记正确：必须有【场景一】【场景二】", lambda c: _check_scene_markers(c)),
         ("13", "(v4.5) @引用融入正文：含『主体严格参考@图片1』", lambda c: "主体严格参考@图片1" in c),
         ("14", "(v4.5) 废除独立@行：不含『📎 @图1』残留", lambda c: "📎 @图1" not in c),
-        ("15", "(v4.17) 格式一致性：双段独立（有【场景一】）→ 【场景一】【场景二】成对出现", lambda c: _v417_format_consistency(c)),
-        ("16", "(v4.17) 格式一致性：单长场景（无【场景一】）→ 必须有格式A+格式B", lambda c: _v417_long_has_dual_format(c)),
+        ("15", "(v4.18) 格式一致性：【场景一】和【场景二】必须成对出现", lambda c: _v418_format_consistency(c)),
         ("17", "(v4.9) 身体部位安全：提示词中无翅膀抓握/捧/舀/呆毛勾取/拖拽等工具化描述", lambda c: _v49_body_safety(c)),
         ("18", "(v4.9) 比喻安全：提示词中无'像XX钩子/精密机械/气球/着火/星星眼✨/开出小花'等危险比喻", lambda c: _v49_metaphor_safety(c)),
     ]
@@ -309,63 +302,32 @@ def _before_checklist(content):
         return content[:idx]
     return content
 
-def _is_dual_scene(content):
-    """判断是否为双段独立格式——仅检查操作卡标题（📋 前缀唯一，自检清单不会用此符号）"""
-    return "📋 场景一操作卡" in _before_checklist(content)
-
 def _check_op_card_count(content):
-    """检查操作卡数量正确：单长=1张 / 双段独立=2张"""
-    is_dual = _is_dual_scene(content)
+    """检查操作卡数量正确：双段独立=场景一+场景二（2张）"""
     body = _before_checklist(content)
     has_card1 = "场景一操作卡" in body
     has_card2 = "场景二操作卡" in body
-    if is_dual:
-        return has_card1 and has_card2  # 双段独立需要两张卡
-    else:
-        return not has_card1 and not has_card2  # 单长不应出现场景分卡标题
+    return has_card1 and has_card2
 
 def _check_scene_markers(content):
-    """检查场景标记正确：单长无场景标题 / 双段独立有【场景一】【场景二】"""
-    is_dual = _is_dual_scene(content)
+    """检查场景标记正确：必须有【场景一】【场景二】"""
     body = _before_checklist(content)
     has_scene1 = "【场景一" in body
     has_scene2 = "【场景二" in body
-    if is_dual:
-        return has_scene1 and has_scene2  # 双段独立必须有两个场景标题
-    else:
-        return not has_scene1 and not has_scene2  # 单长不能有场景标题
+    return has_scene1 and has_scene2
 
 def _check_segment_count(content):
-    """检查段数符合格式：单长≥4段 / 双段独立=2个场景块"""
-    is_dual = _is_dual_scene(content)
+    """检查段数：双段独立=【场景一】【场景二】各一段连续叙事"""
     body = _before_checklist(content)
-    if is_dual:
-        # 双段独立：统计【场景一】【场景二】数量 = 2
-        scene_markers = len(re.findall(r'【场景[一二]', body))
-        return scene_markers >= 2
-    else:
-        # 单长：统计段1/段2/.../收尾段标记
-        segments = re.findall(r'(段\d+|收尾段)', body)
-        return len(segments) >= 4
+    scene_markers = len(re.findall(r'【场景[一二]', body))
+    return scene_markers >= 2
 
-def _v417_format_consistency(content):
-    """(v4.17) 如果是双段独立格式，必须【场景一】和【场景二】成对出现"""
-    is_dual = _is_dual_scene(content)
-    if is_dual:
-        body = _before_checklist(content)
-        has_scene1 = "【场景一" in body
-        has_scene2 = "【场景二" in body
-        return has_scene1 and has_scene2
-    return True  # 不是双段独立格式，不检查
-
-def _v417_long_has_dual_format(content):
-    """(v4.17) 如果是单长格式（无【场景一】），必须有格式A+格式B"""
-    is_dual = _is_dual_scene(content)
-    if not is_dual:
-        # 单长格式：必须有格式A 和 格式B（只在操作卡/提示词区域检查，排除自检清单）
-        body = _before_checklist(content)
-        return "格式A" in body and "格式B" in body
-    return True  # 双段独立格式，不检查此项
+def _v418_format_consistency(content):
+    """(v4.18) 双段独立格式必须【场景一】和【场景二】成对出现"""
+    body = _before_checklist(content)
+    has_scene1 = "【场景一" in body
+    has_scene2 = "【场景二" in body
+    return has_scene1 and has_scene2
 
 def _v49_body_safety(content):
     """(v4.9) 检查提示词中是否包含身体部位工具化的危险描述"""
@@ -437,7 +399,7 @@ def build_system_prompt():
     themes = "、".join(sorted(used_themes()))
     refs = recent_scripts(2)
     mode_counts, char_counts, char_episodes, total = analyze_usage_stats()
-    single_count, double_count, fmt_total, recent_fmts_2, recent_fmts_3 = analyze_format_stats()
+    double_count, fmt_total, recent_fmts_2, recent_fmts_3 = analyze_format_stats()
     
     # 规范文档存在且有内容时才插入，否则跳过
     spec_section = ""
@@ -449,40 +411,19 @@ def build_system_prompt():
     b_ratio = mode_counts["B_第二角色"] / max(total, 1)
     c_ratio = mode_counts["C_独角戏"] / max(total, 1)
     
-    # 选最缺的模式（v4.17: B模式「第二角色」已停用，仅统计不推荐）
+    # 选最缺的模式（v4.18: B模式「第二角色」已停用，仅统计不推荐）
     mode_suggestions = []
     if a_ratio < 0.4: mode_suggestions.append(f"「大手入镜」(已用{mode_counts['A_大手']}/{total}集，偏少→优先)")
     if c_ratio < 0.15: mode_suggestions.append(f"「独角戏」(已用{mode_counts['C_独角戏']}/{total}集，偏少→优先)")
     if not mode_suggestions: mode_suggestions.append("随机选择A/C，保持多样性")
     
-    # 🔀 v4.6 场景格式随机
-    single_ratio = single_count / max(fmt_total, 1)
-    double_ratio = double_count / max(fmt_total, 1)
-    
-    # 强制切换逻辑：如果最近2集都是同一格式，必须切换
-    force_format = None
-    if len(recent_fmts_2) == 2 and recent_fmts_2[0] == recent_fmts_2[1]:
-        force_format = "双段独立" if recent_fmts_2[0] == "单长" else "单长"
-    
-    format_instruction = ""
-    if force_format:
-        format_instruction = f"""
-### 🔀 场景格式（v4.17随机铁律）⚠️ 强制切换
-- 🚫 最近2集均为「{recent_fmts_2[0]}」格式
-- ✅ **本集必须使用「{force_format}」格式**（禁止连续3集同一格式）
-- 单长场景 = 24s连续叙事（含格式A+格式B）
-- 双段独立 = 12-15s×2两段独立连续叙事（【场景一】【场景二】各一段完整叙事，不输出格式A/B）
-"""
-    else:
-        preferred = "单长" if single_ratio < double_ratio else "双段独立"
-        format_instruction = f"""
-### 🔀 场景格式（v4.17随机铁律）⚠️ 随机选择
-当前统计：单长场景 {single_count}/{fmt_total} 集（{single_ratio:.0%}）| 双段独立 {double_count}/{fmt_total} 集（{double_ratio:.0%}）
-最近格式序列: {recent_fmts_3}
-👉 建议优先选「{preferred}」格式（缺口较大），但也可以随机选另一种。禁止连续3集同一格式。
-- 单长场景 = 24s连续叙事，中文含格式A（Agent分段）+ 格式B（连续叙事）
-- 双段独立 = 12-15s×2两段独立连续叙事（【场景一】【场景二】各一段完整叙事，不输出格式A/B）
-"""
+    # v4.18 统一双段独立，废除单长24s（即梦上限15s）
+    format_instruction = """### 🔀 场景格式（v4.18 统一双段独立）⚠️
+- ✅ **一律使用「双段独立」格式**：12-15s×2 两段独立连续叙事
+- 每段一次性连续生成，不切段、不用Agent模式
+- 两段之间不做叙事关联强制，可以完全独立
+- 🚫 **不输出格式A/格式B**，仅输出【场景一】【场景二】各一段连续叙事
+- 原因：即梦 Seedance 单次生成上限 15s，单长 24s 无法生成"""
     
     return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。
 
@@ -496,7 +437,7 @@ def build_system_prompt():
 - 🖐 大手入镜：{mode_counts['A_大手']} 集（{a_ratio:.0%}）
 - 👫 第二角色：{mode_counts['B_第二角色']} 集（{b_ratio:.0%}）
 - 🐧 独角戏：{mode_counts['C_独角戏']} 集（{c_ratio:.0%}）
-- 🐶 Doro 已出场 {char_counts.get('Doro', 0)} 次 | ✨ 菲比已出场 {char_counts.get('菲比', 0)} 次（⚠️ B模式「第二角色」已按 v4.17规范停用，历史统计仅供参考）
+- 🐶 Doro 已出场 {char_counts.get('Doro', 0)} 次 | ✨ 菲比已出场 {char_counts.get('菲比', 0)} 次（⚠️ B模式「第二角色」已按 v4.18规范停用，历史统计仅供参考）
 
 👉 本集建议：{', '.join(mode_suggestions)}
 {format_instruction}
@@ -609,7 +550,19 @@ def generate_one():
                 for w in warnings:
                     _add_log(w)
             
-            fname = f"脚本{ep_num:03d}_分镜脚本.md"
+            # v4.18: 从生成标题动态提取关键词 → 取消硬编码文件名
+            title_match = re.search(r'#\s*🐧\s*脚本\d+_(.+?)_分镜脚本', response)
+            if title_match:
+                keyword = title_match.group(1)
+                fname = f"脚本{ep_num:03d}_{keyword}_分镜脚本.md"
+            else:
+                # 兜底：从任意标题中提取
+                h1_match = re.search(r'#\s*(.+)', response)
+                if h1_match:
+                    safe = re.sub(r'[\\/*?:"<>|🐧]', '', h1_match.group(1)).strip()[:30]
+                    fname = f"脚本{ep_num:03d}_{safe}_分镜脚本.md" if safe else f"脚本{ep_num:03d}_分镜脚本.md"
+                else:
+                    fname = f"脚本{ep_num:03d}_分镜脚本.md"
             (WORK_DIR / fname).write_text(response, encoding="utf-8")
             
             with _lock:
