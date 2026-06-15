@@ -188,6 +188,42 @@ def used_themes():
             pass
     return themes
 
+def theme_similarity_warnings(blocked_themes):
+    """纯数据驱动：从已用主题中检测高频动宾模式，0硬编码
+    
+    返回 (oversaturated_verbs: {verb: count}, warnings: [str])
+    例如 已用[偷吃布丁,偷吃饼干,偷喝牛奶] → oversaturated={'偷吃':2,'偷喝':1}
+    """
+    from collections import Counter
+    
+    # 动作动词字（中文常见动宾结构中的动词）
+    _V = set('吃喝玩追踩吹滚转投篮躲藏钻照拍踢扔打滑摔蹦跳扒蹭躺趴舔尝咬抓够顶偷贪')
+    
+    verbs = Counter()
+    for t in blocked_themes:
+        if len(t) < 1:
+            continue
+        # 智能识别动词长度：检查前2字是否都是动作字 → 复合动词（如"偷吃""贪吃"）
+        v2 = t[:2] if len(t) >= 2 else ""
+        v1 = t[0]
+        
+        if v2 and all(c in _V for c in v2):
+            verb = v2  # 2字复合动词
+        elif v1 in _V:
+            verb = v1  # 单字动词
+        else:
+            continue  # 非动宾结构（如"冬天静电"）
+        
+        verbs[verb] += 1
+    
+    saturated = {v: c for v, c in verbs.items() if c >= 2}
+    warnings = []
+    if saturated:
+        items = [f"{v}X（{c}次）" for v, c in sorted(saturated.items(), key=lambda x: -x[1])]
+        warnings.append(f"以下动词模式已高频：{', '.join(items)}。请勿再用这些动词搭配不同对象（如偷吃布丁→偷吃饼干），会被判为重复。")
+    
+    return saturated, warnings
+
 def analyze_usage_stats():
     """分析已生成脚本的模式/角色使用统计，智能均衡轮换"""
     mode_counts = {"A_大手": 0, "B_第二角色": 0, "C_独角戏": 0}
@@ -440,6 +476,26 @@ def build_system_prompt():
     if c_ratio < 0.15: mode_suggestions.append(f"「独角戏」(已用{mode_counts['C_独角戏']}/{total}集，偏少→优先)")
     if not mode_suggestions: mode_suggestions.append("随机选择A/C，保持多样性")
     
+    # ═══ v4.21 纯数据驱动去重：AI 自主创意 ═══
+    blocked = used_themes()
+    _, sim_warnings = theme_similarity_warnings(blocked)
+    
+    category_block = ""
+    if sim_warnings:
+        for w in sim_warnings:
+            category_block += f"## ⚠️ {w}\n"
+    
+    blocked_list = "、".join(sorted(blocked)) if blocked else "（无）"
+    category_block += f"""## 🎯 主题自主创意指令（v4.21）
+已用主题黑名单：{blocked_list}
+
+**AI 自主创意规则：**
+- 以上主题及其近义变体一律禁止（换宾语不算新主题，如「偷吃布丁→偷吃饼干」）
+- 从企鹅妹妹的日常/探索/玩耍/意外/情绪中**自由原创**一个全新主题，不要从任何预设列表挑
+- 主题名简洁3-8字，一眼看出核心剧情
+
+"""
+    
     # v4.18 统一双段独立，废除单长24s（即梦上限15s）
     format_instruction = """### 🔀 场景格式（v4.18 统一双段独立）⚠️
 - ✅ **一律使用「双段独立」格式**：12-15s×2 两段独立连续叙事
@@ -461,6 +517,7 @@ def build_system_prompt():
 安全铁律、自检清单均在此文档中，不得自行添加或修改规则。⭐⭐⭐
 {spec_section}
 
+{category_block}
 ## 📊 智能均衡统计（Python 自动计算，供参考）
 
 当前已生成 {total} 集，各模式使用统计：
@@ -528,11 +585,19 @@ def generate_one():
 
 这些是自动化校验规则，必须逐字满足。"""
             
-            # 构建已用主题黑名单（严格禁止使用）
+            # 构建已用主题黑名单 + 相似度警告（纯数据驱动）
             blocked = used_themes()
+            sim_saturated, sim_warnings = theme_similarity_warnings(blocked)
             blocked_str = "\n".join(f"  - ❌ {t}" for t in sorted(blocked)) if blocked else "  （暂无）"
+            
             user_prompt = f"请生成脚本{ep_num:03d}的即梦提交内容。\n\n"
-            user_prompt += f"## 🚫 已用主题严格黑名单（绝对不得使用以下任一主题，违者校验失败）：\n{blocked_str}\n\n"
+            
+            # 相似度警告
+            if sim_warnings:
+                for w in sim_warnings:
+                    user_prompt += f"## ⚠️ {w}\n\n"
+            
+            user_prompt += f"## 🚫 已用主题严格黑名单（绝对不得使用以下任一主题或近义变体）：\n{blocked_str}\n\n"
             user_prompt += f"⚠️ 严格遵守系统提示中的「完整生成规范文档」全部规则，逐项对照执行，不得跳过。{retry_feedback}\n\n直接输出，不要省略。"
             
             def on_chunk(text):
