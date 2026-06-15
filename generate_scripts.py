@@ -161,7 +161,7 @@ def used_themes():
                     keyword = m.group(1).strip()
             # 兜底：中文提示词第一段（段1/【场景一】首行），去掉画风前缀
             if not keyword:
-                m = re.search(r'(?:段1|【场景一)[：:· ].{10,200}', c, re.DOTALL)
+                m = re.search(r'(?:段1[：:· ]|【场景一】[：:· ]).{10,200}', c, re.DOTALL)
                 if m:
                     text = re.sub(r'^[\w\u4e00-\u9fff]+\s*handheld[。.]', '', m.group(0)).strip()
                     keyword = text[:60]
@@ -412,7 +412,7 @@ def _v49_metaphor_safety(content):
     body_metaphor = [
         r'像.{0,4}(钩子|弹簧|天线|雷达)',
         r'像.{0,4}精密机械',
-        r'如.{0,2}(气球|皮球)',
+        r'(?:像|如).{0,2}(气球|皮球)',
         r'像.{0,4}着火',
     ]
     for pattern in body_metaphor:
