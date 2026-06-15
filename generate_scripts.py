@@ -144,30 +144,45 @@ def next_ep_num():
     return max(n for n,_ in eps) + 1 if eps else 1
 
 def used_themes():
-    """从操作卡/提示词中提取实质主题关键词，避免 AI 重复"""
+    """从脚本文件名提取主题关键词，AI 必须严格避开"""
+    raw = set()
+    noise = {"校验失败","分镜脚本","即梦生成","抖音","标题","简介"}
+    
+    for scan_dir in [WORK_DIR]:
+        if not scan_dir.exists():
+            continue
+        for f in sorted(scan_dir.glob("*.md")):
+            name = f.stem  # 去掉 .md
+            # 匹配: 脚本003_偷吃布丁_分镜脚本 / 第8话_第一次吃柠檬 / 第18话_称体重的暴击_长视频
+            m = re.search(r'[第脚本]\d+[套话集]?_?(.+?)(?:_分镜脚本)?$', name)
+            if m:
+                kw = m.group(1).strip().rstrip("_")
+                skip = False
+                for n in noise:
+                    if n in kw:
+                        skip = True
+                        break
+                if not skip and len(kw) >= 2 and not kw.isdigit():
+                    # 去 _长视频 后缀，去 _抖音标题简介 后缀
+                    kw = re.sub(r'_(?:长视频|抖音标题简介)$', '', kw)
+                    raw.add(kw)
+    
+    # 去重合并：同名变体归一（抱枕大作战/抱枕大战/抱枕堡垒 → 抱枕）
     themes = set()
+    for t in raw:
+        base = re.sub(r'(大作战|大战|大冒险|风波|失踪事件|争夺战|堡垒|太空船)$', '', t)
+        themes.add(base.strip().rstrip("_")[:30])
+    
+    # 兜底：对无关键词的文件名（如脚本001_分镜脚本.md），从文件内标题提取
     for f in sorted(WORK_DIR.glob("脚本*_分镜脚本.md")):
         try:
-            c = f.read_text(encoding="utf-8")
-            keyword = ""
-            # 优先：首帧画面描述（表格行格式：| 🔴 必须 | 🎬 首帧画面 | 描述... |）
-            m = re.search(r'🎬\s*首帧画面\s*\|\s*(.+?)(?:\s*\|)', c)
-            if m:
-                keyword = m.group(1).strip()
-            # 备选：背景参考图行（表格行格式：| 🟡 建议 | 🏙 背景参考图 | 描述... |）
-            if not keyword:
-                m = re.search(r'🏙\s*背景参考图\s*\|\s*(.+?)(?:\s*\|)', c)
-                if m:
-                    keyword = m.group(1).strip()
-            # 兜底：中文提示词第一段（段1/【场景一】首行），去掉画风前缀
-            if not keyword:
-                m = re.search(r'(?:段1[：:· ]|【场景一】[：:· ]).{10,200}', c, re.DOTALL)
-                if m:
-                    text = re.sub(r'^[\w\u4e00-\u9fff]+\s*handheld[。.]', '', m.group(0)).strip()
-                    keyword = text[:60]
-            if keyword:
-                themes.add(keyword[:80])  # 截取前80字作为主题指纹
-        except Exception:
+            first = f.read_text(encoding="utf-8")[:200]
+            tm = re.search(r'脚本\d+_(.+?)_分镜脚本', first)
+            if tm:
+                kw = tm.group(1).strip()
+                if len(kw) >= 2:
+                    themes.add(kw[:30])
+        except:
             pass
     return themes
 
@@ -249,7 +264,7 @@ def validate_script(content, ep_num):
         ("15", "(v4.18) 格式一致性：【场景一】和【场景二】必须成对出现", lambda c: _v418_format_consistency(c)),
         ("17", "(v4.9) 身体部位安全：提示词中无翅膀抓握/捧/舀/呆毛勾取/拖拽等工具化描述", lambda c: _v49_body_safety(c)),
         ("18", "(v4.9) 比喻安全：提示词中无'像XX钩子/精密机械/气球/着火/星星眼✨/开出小花'等危险比喻", lambda c: _v49_metaphor_safety(c)),
-        ("23", "(v4.18) 🔗 场景二操作卡含跨场景衔接判断（有衔接→给出方案 / 无衔接→标注"无衔接"）", lambda c: _check_cross_scene_continuity(c)),
+        ("23", "(v4.18) 🔗 场景二操作卡含跨场景衔接判断（有衔接→给出方案 / 无衔接→标注「无衔接」）", lambda c: _check_cross_scene_continuity(c)),
     ]
     
     for num, desc, check_fn in checks:
@@ -511,7 +526,12 @@ def generate_one():
 
 这些是自动化校验规则，必须逐字满足。"""
             
-            user_prompt = f"请生成脚本{ep_num:03d}的即梦提交内容。\n\n⚠️ 严格遵守系统提示中的「完整生成规范文档」全部规则，逐项对照执行，不得跳过。{retry_feedback}\n\n直接输出，不要省略。"
+            # 构建已用主题黑名单（严格禁止使用）
+            blocked = used_themes()
+            blocked_str = "\n".join(f"  - ❌ {t}" for t in sorted(blocked)) if blocked else "  （暂无）"
+            user_prompt = f"请生成脚本{ep_num:03d}的即梦提交内容。\n\n"
+            user_prompt += f"## 🚫 已用主题严格黑名单（绝对不得使用以下任一主题，违者校验失败）：\n{blocked_str}\n\n"
+            user_prompt += f"⚠️ 严格遵守系统提示中的「完整生成规范文档」全部规则，逐项对照执行，不得跳过。{retry_feedback}\n\n直接输出，不要省略。"
             
             def on_chunk(text):
                 full_content_chunks.append(text)
