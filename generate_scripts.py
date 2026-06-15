@@ -272,7 +272,7 @@ def validate_script(content, ep_num):
 
 def _iron_law_before_prompts(content):
     """检查角色铁律是否出现在中文提示词标题之后、分段开始之前"""
-    cn_section = re.search(r'中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
+    cn_section = re.search(r'##\s*中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
     if cn_section:
         cn_text = cn_section.group()
         return "角色铁律" in cn_text
@@ -370,9 +370,9 @@ def _v417_long_has_dual_format(content):
 def _v49_body_safety(content):
     """(v4.9) 检查提示词中是否包含身体部位工具化的危险描述"""
     # 只在提示词段落中检查（操作卡和自检清单区域可以包含元描述）
-    # 提取中文提示词区域
+    # 提取中文提示词区域（锚定到 ## 标题，防止误匹配即梦参数中的"图生视频(角色参考图+中文提示词)"）
     prompt_section = ""
-    cn_match = re.search(r'中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
+    cn_match = re.search(r'##\s*中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
     if cn_match:
         prompt_section = cn_match.group()
     else:
@@ -401,7 +401,7 @@ def _v49_body_safety(content):
 def _v49_metaphor_safety(content):
     """(v4.9) 检查提示词中是否包含危险比喻性描述"""
     prompt_section = ""
-    cn_match = re.search(r'中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
+    cn_match = re.search(r'##\s*中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
     if cn_match:
         prompt_section = cn_match.group()
     else:
