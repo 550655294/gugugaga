@@ -249,6 +249,7 @@ def validate_script(content, ep_num):
         ("15", "(v4.18) 格式一致性：【场景一】和【场景二】必须成对出现", lambda c: _v418_format_consistency(c)),
         ("17", "(v4.9) 身体部位安全：提示词中无翅膀抓握/捧/舀/呆毛勾取/拖拽等工具化描述", lambda c: _v49_body_safety(c)),
         ("18", "(v4.9) 比喻安全：提示词中无'像XX钩子/精密机械/气球/着火/星星眼✨/开出小花'等危险比喻", lambda c: _v49_metaphor_safety(c)),
+        ("23", "(v4.18) 🔗 场景二操作卡含跨场景衔接判断（有衔接→给出方案 / 无衔接→标注"无衔接"）", lambda c: _check_cross_scene_continuity(c)),
     ]
     
     for num, desc, check_fn in checks:
@@ -382,6 +383,11 @@ def _v49_metaphor_safety(content):
             return False
     return True
 
+def _check_cross_scene_continuity(content):
+    """(v4.18) 检查场景二操作卡是否包含跨场景衔接判断"""
+    body = _before_checklist(content)
+    return "跨场景衔接" in body
+
 def recent_scripts(n=2):
     eps = sorted(get_episodes(), key=lambda x: x[0], reverse=True)[:n]
     texts = []
@@ -423,7 +429,14 @@ def build_system_prompt():
 - 每段一次性连续生成，不切段、不用Agent模式
 - 两段之间不做叙事关联强制，可以完全独立
 - 🚫 **不输出格式A/格式B**，仅输出【场景一】【场景二】各一段连续叙事
-- 原因：即梦 Seedance 单次生成上限 15s，单长 24s 无法生成"""
+- 原因：即梦 Seedance 单次生成上限 15s，单长 24s 无法生成
+
+### 🔗 跨场景衔接规则（v4.18）⚠️
+- 场景二操作卡中**必须**包含「🔗 跨场景衔接」判断行，给出3类判断之一：
+  - 🔗 **紧密衔接**（同空间/连续动作/因果连贯）→ 用户生成场景二时，需上传场景一的**最后一帧截图**作为角色参考图，写清「主体严格参考@图片1 的姿势和位置，背景保持不变继续下一帧」
+  - 🔗 **自然延续**（同一主题但场景切换/时间跳跃）→ 仅用文字描述"从场景一延续：XX"，无需上传图片
+  - 🚫 **无衔接**（两段完全独立的叙事）→ 标注"无衔接，不需要跨场景参考"，两段各自独立生成
+- 有衔接时必须明确告诉用户怎么操作（是否传图、怎么写参考提示词），无衔接时无所谓"""
     
     return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列短视频剧本。
 
