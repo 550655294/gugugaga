@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-🐧 咕咕嘎嘎 剧本自动生成器 v1.6
+🐧 咕咕嘎嘎 剧本自动生成器 v1.7
 DeepSeek AI 驱动 · 纯引擎模式 · 剧情规则全部走规范文档
+📋 支持模式：普通分镜 / 战斗分镜
 访问 http://localhost:8765 查看控制面板
 """
 
@@ -13,7 +14,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 # ═══ 配置 ═══
 ROOT_DIR = Path(__file__).parent.resolve()
 WORK_DIR = ROOT_DIR  # .env、项目文档等
-SCRIPT_DIR = ROOT_DIR / "普通分镜脚本"  # 生成的分镜脚本存放处
+SCRIPT_DIR = ROOT_DIR / "普通分镜脚本"  # 普通日常分镜脚本存放处
+BATTLE_SCRIPT_DIR = ROOT_DIR / "战斗分镜脚本"  # 战斗分镜脚本存放处
 TOOL_DIR = ROOT_DIR / "工具脚本"
 DURATION_MIN = 30
 PORT = 8765
@@ -50,6 +52,14 @@ _st = {"running":False,"total":0,"current":"等待启动...","step":"点击按�
        "validation_errors":[], "failed_count":0}
 _gen_thread = None
 
+# ═══ 战斗模式全局状态 ═══
+_battle_lock = threading.Lock()
+_st_battle = {"running":False,"total":0,"current":"等待启动...","step":"点击按钮开始","logs":[],
+              "remaining":DURATION_MIN*60,"completed":False,"errors":0,"start_time":None,
+              "streaming":False,"stream_content":"","stream_ep":0,
+              "validation_errors":[], "failed_count":0}
+_battle_gen_thread = None
+
 def _add_log(msg):
     with _lock:
         ts = datetime.now().strftime("%H:%M:%S")
@@ -70,6 +80,27 @@ def get_status():
     except Exception:
         d["files"] = []
     return d
+
+def get_battle_status():
+    with _battle_lock:
+        d = dict(_st_battle)
+    with DURATION_MIN_LOCK:
+        d["duration_min"] = DURATION_MIN
+    try:
+        eps = []
+        BATTLE_SCRIPT_DIR.mkdir(exist_ok=True)
+        for f in sorted(BATTLE_SCRIPT_DIR.glob("战斗*_分镜脚本.md"), reverse=True):
+            eps.append({"name": f.name, "size": f.stat().st_size})
+        d["files"] = eps[:20]
+    except Exception:
+        d["files"] = []
+    return d
+
+def _battle_add_log(msg):
+    with _battle_lock:
+        ts = datetime.now().strftime("%H:%M:%S")
+        _st_battle["logs"].append(f"[{ts}] {msg}")
+        if len(_st_battle["logs"]) > 200: _st_battle["logs"] = _st_battle["logs"][-200:]
 
 # ═══ DeepSeek API ═══
 def call_api(system_prompt, user_prompt, max_tokens=8192):
@@ -316,6 +347,66 @@ def validate_script(content, ep_num):
     
     passed = len(failures) == 0
     return passed, failures, warnings
+
+def _validate_battle_script(content, ep_num):
+    """战斗模式校验：放宽身体部位安全检查（战斗必然涉及肢体动作）"""
+    failures = []
+    checks = [
+        ("1", "文件第一行不能是『---』", lambda c: not c.lstrip().startswith("---")),
+        ("2", "包含📋 生成操作卡", lambda c: "生成操作卡" in _before_checklist(c) or "操作卡" in _before_checklist(c)),
+        ("3", "(v4.18) 操作卡数量正确：必须有场景一+场景二操作卡（2张）", lambda c: _check_op_card_count(c)),
+        ("4", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
+        ("5", "包含中文提示词", lambda c: "中文提示词" in c),
+        ("6", "包含⚠️ 角色铁律", lambda c: "角色铁律" in _before_checklist(c)),
+        ("7", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
+        ("8", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
+        ("9", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
+        ("10", "段数正确：必须有【场景一】【场景二】", lambda c: _check_segment_count(c)),
+        ("11", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
+        ("12", "场景标记正确：必须有【场景一】【场景二】", lambda c: _check_scene_markers(c)),
+        ("13", "@引用融入正文：含『主体严格参考@图片1』", lambda c: "主体严格参考@图片1" in c),
+        ("14", "废除独立@行：不含『📎 @图1』残留", lambda c: "📎 @图1" not in c),
+        ("15", "格式一致性：【场景一】和【场景二】必须成对出现", lambda c: _v418_format_consistency(c)),
+        # 战斗模式放宽 #17 #18：只拦截最危险的身体部位描述
+        ("17-judge", "战斗身体安全：无呆毛勾取/拖拽/缠绕/工具化、无嘴张成O形/伸长、无腮帮像气球", lambda c: _battle_body_safety(c)),
+        ("23", "🔗 场景二操作卡含跨场景衔接判断", lambda c: _check_cross_scene_continuity(c)),
+    ]
+    
+    for num, desc, check_fn in checks:
+        if not check_fn(content):
+            failures.append(f"#{num} {desc}")
+    
+    warnings = []
+    if len(content) < 2000:
+        warnings.append("⚠️ 内容过短（<2000字），可能不完整")
+    
+    passed = len(failures) == 0
+    return passed, failures, warnings
+
+def _battle_body_safety(content):
+    """战斗模式身体安全：允许鳍翅拍打/呆毛戳/蹼足踢等合理战斗动作，只拦截过度工具化"""
+    prompt_section = ""
+    cn_match = re.search(r'##\s*中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
+    if cn_match:
+        prompt_section = cn_match.group()
+    else:
+        prompt_section = _before_checklist(content)
+    
+    # 只拦截最危险的描述（工具化/变形）
+    dangerous = [
+        r'呆毛.{0,15}(勾取|拖拽|缠绕|开出小花|像.*钩子|像.*机械)',
+        r'翅膀.{0,10}(抓握|五指|握拳|舀|手指)',
+        r'嘴.{0,5}(张成.{0,3}O形|伸长|无底洞)',
+        r'腮帮子.{0,5}(像气球|气球)',
+        r'星星眼',
+        r'舌头.{0,5}像.{0,5}着火',
+        r'头发.{0,5}(炸成蒲公英|球形闪电|膨胀炸)',
+        r'身体.{0,5}(像泄气皮球|皮球.{0,3}泄气)',
+    ]
+    for pattern in dangerous:
+        if re.search(pattern, prompt_section):
+            return False
+    return True
 
 def _iron_law_before_prompts(content):
     """检查角色铁律是否出现在中文提示词标题之后、分段开始之前"""
@@ -702,6 +793,297 @@ def generate_one():
     
     return False
 
+# ═══ 战斗分镜脚本生成 ═══
+def get_battle_episodes():
+    eps = []
+    BATTLE_SCRIPT_DIR.mkdir(exist_ok=True)
+    for f in sorted(BATTLE_SCRIPT_DIR.glob("战斗*_分镜脚本.md")):
+        m = re.match(r'战斗(\d+)_.*分镜脚本\.md', f.name)
+        if m: eps.append((int(m.group(1)), f.name))
+    return eps
+
+def next_battle_ep_num():
+    eps = get_battle_episodes()
+    return max(n for n,_ in eps) + 1 if eps else 1
+
+def battle_used_themes():
+    """从战斗脚本文件名提取主题关键词"""
+    raw = set()
+    noise = {"校验失败","分镜脚本","即梦生成","抖音","标题","简介"}
+    BATTLE_SCRIPT_DIR.mkdir(exist_ok=True)
+    for f in sorted(BATTLE_SCRIPT_DIR.glob("*.md")):
+        name = f.stem
+        m = re.search(r'战斗\d+_?(.+?)(?:_分镜脚本)?$', name)
+        if m:
+            kw = m.group(1).strip().rstrip("_")
+            if kw not in noise and len(kw) >= 2 and not kw.isdigit():
+                kw = re.sub(r'_(?:长视频|抖音标题简介)$', '', kw)
+                raw.add(kw)
+    themes = set()
+    for t in raw:
+        base = re.sub(r'(大作战|大战|对决|决斗|激战|死斗)$', '', t)
+        themes.add(base.strip().rstrip("_")[:30])
+    return themes
+
+def build_battle_system_prompt():
+    battle_spec = _read("项目文档/咕嘎战斗生成规范文档.md")
+    full_spec = _read("项目文档/咕嘎生成规范文档.md")
+    blocked = battle_used_themes()
+    _, sim_warnings = theme_similarity_warnings(blocked)
+    
+    # 战斗规范文档（唯一权威战斗规范源）
+    battle_section = ""
+    if battle_spec and battle_spec.strip():
+        battle_section = f"\n## ⭐⭐⭐ 战斗生成规范（最高优先级，逐项对照执行）⭐⭐⭐\n{battle_spec}\n"
+    
+    # 普通规范文档（仅作为角色设定/微动作库参考）
+    spec_section = ""
+    if full_spec and full_spec.strip():
+        spec_section = f"\n## 📚 参考：角色完整设定与微动作库\n{full_spec}\n"
+    
+    category_block = ""
+    if sim_warnings:
+        for w in sim_warnings:
+            category_block += f"## ⚠️ {w}\n"
+    
+    blocked_list = "、".join(sorted(blocked)) if blocked else "（无）"
+    category_block += f"""## 🎯 战斗主题创意指令（v1.0）
+已用战斗主题黑名单：{blocked_list}
+
+**战斗创意规则：**
+- 以上主题一律禁止
+- 创作企鹅妹妹的战斗/对决/切磋场景，萌系风格，有趣不严肃
+- 主题名简洁3-8字，前缀为「战斗」而非「脚本」
+"""
+    
+    # 格式指令补充（操作卡模板强化）
+    format_instruction = """### 🔀 场景格式（双段独立）⚠️
+- ✅ **「双段独立」格式**：12-15s×2
+- 【场景一】：对峙/挑衅/准备阶段
+- 【场景二】：交锋/对决/结果（高潮+反转）
+
+### 📋 操作卡模板（必须严格按此格式）⚠️
+```
+### 📋 场景一操作卡
+**即梦生成参数**：图生视频(角色参考图+中文提示词)→Seedance 1.0→12-15s
+**中文提示词**：（详细描述...）
+⚠️ 角色铁律：...（必须写）
+**主体严格参考@图片1**的：（姿势和位置）
+
+### 📋 场景二操作卡
+**即梦生成参数**：图生视频(角色参考图+中文提示词)→Seedance 1.0→12-15s
+**中文提示词**：（详细描述...）
+⚠️ 角色铁律：...（必须写）
+**主体严格参考@图片1**的：（姿势和位置）
+🔗 跨场景衔接：[紧密衔接/自然延续/无衔接]
+```
+"""
+
+    return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列**战斗短视频**剧本。
+
+{battle_section}
+{spec_section}
+{category_block}
+{format_instruction}
+
+## 补充材料
+### 已用战斗主题(请避开): {blocked_list}
+
+**⚠️ 输出时不要省略任何部分，严格按照格式模板逐项输出。**"""
+
+def generate_battle_one():
+    global _st_battle
+    MAX_RETRIES = 3
+    prev_failures = []
+    
+    for attempt in range(1, MAX_RETRIES + 1):
+        with _battle_lock:
+            if not _st_battle["running"]:
+                return False
+        
+        ep_num = next_battle_ep_num()
+        with _battle_lock:
+            _st_battle["current"] = f"战斗{ep_num:03d}生成中..."
+            _st_battle["streaming"] = True
+            _st_battle["stream_content"] = ""
+            _st_battle["stream_ep"] = ep_num
+            _st_battle["validation_errors"] = []
+        
+        if attempt == 1:
+            _battle_add_log(f"⚔️ 开始生成战斗{ep_num:03d}...")
+        else:
+            _battle_add_log(f"🔄 重试第{attempt}次 生成战斗{ep_num:03d}...")
+        
+        full_content_chunks = []
+        
+        try:
+            with _battle_lock: _st_battle["step"] = "调用 DeepSeek API（流式）..."
+            _battle_add_log("🤖 请求 DeepSeek API（实时流式输出）...")
+            
+            sys_prompt = build_battle_system_prompt()
+            
+            retry_feedback = ""
+            if prev_failures:
+                retry_feedback = f"\n## ⚠️ 上次校验失败，必须修正：{'；'.join(prev_failures[:5])}\n"
+            
+            blocked = battle_used_themes()
+            sim_saturated, sim_warnings = theme_similarity_warnings(blocked)
+            blocked_str = "\n".join(f"  - ❌ {t}" for t in sorted(blocked)) if blocked else "  （暂无）"
+            
+            user_prompt = f"请生成战斗分镜脚本 战斗{ep_num:03d}。\n\n"
+            if sim_warnings:
+                for w in sim_warnings:
+                    user_prompt += f"## ⚠️ {w}\n\n"
+            user_prompt += f"## 🚫 已用战斗主题黑名单：\n{blocked_str}\n\n"
+            user_prompt += f"⚠️ 严格遵守战斗规范，萌系战斗风格，有趣但不暴力。{retry_feedback}\n直接输出，不要省略。"
+
+            def on_chunk(text):
+                full_content_chunks.append(text)
+                with _battle_lock:
+                    _st_battle["stream_content"] = ''.join(full_content_chunks)
+            
+            call_api_streaming(sys_prompt, user_prompt, on_chunk, 8192)
+            response = ''.join(full_content_chunks)
+            
+            with _battle_lock: _st_battle["streaming"] = False
+            _battle_add_log(f"✅ 流式响应完成（{len(response)}字）")
+            
+            # 校验（战斗模式放宽 #17 #18 身体部位安全检查）
+            passed, failures, warnings = _validate_battle_script(response, ep_num)
+            
+            if not passed:
+                fail_dir = BATTLE_SCRIPT_DIR / "失败脚本"
+                fail_dir.mkdir(exist_ok=True)
+                ts = datetime.now().strftime("%m%d_%H%M")
+                fail_name = f"战斗{ep_num:03d}_校验失败_{ts}_{len(failures)}项.md"
+                (fail_dir / fail_name).write_text(response, encoding="utf-8")
+                
+                with _battle_lock:
+                    _st_battle["validation_errors"] = failures
+                    _st_battle["failed_count"] += 1
+                _battle_add_log(f"⚠️ 校验未通过（{len(failures)}项）: {'、'.join(failures[:5])}")
+                
+                prev_failures = failures[:]
+                if attempt < MAX_RETRIES:
+                    _battle_add_log(f"🔄 5秒后重试（{attempt}/{MAX_RETRIES}）...")
+                    time.sleep(5)
+                    continue
+                else:
+                    _battle_add_log(f"❌ 已达最大重试次数")
+                    with _battle_lock: _st_battle["errors"] += 1
+                    return False
+            
+            # 保存
+            title_match = re.search(r'#\s*⚔️\s*战斗\d+_(.+?)_分镜脚本', response)
+            if title_match:
+                keyword = title_match.group(1)
+                fname = f"战斗{ep_num:03d}_{keyword}_分镜脚本.md"
+            else:
+                h1_match = re.search(r'#\s*(.+)', response)
+                if h1_match:
+                    safe = re.sub(r'[\\/*?:"<>|⚔️🐧]', '', h1_match.group(1)).strip()[:30]
+                    fname = f"战斗{ep_num:03d}_{safe}_分镜脚本.md" if safe else f"战斗{ep_num:03d}_分镜脚本.md"
+                else:
+                    fname = f"战斗{ep_num:03d}_分镜脚本.md"
+            
+            BATTLE_SCRIPT_DIR.mkdir(exist_ok=True)
+            (BATTLE_SCRIPT_DIR / fname).write_text(response, encoding="utf-8")
+            
+            with _battle_lock:
+                _st_battle["total"] += 1
+                _st_battle["step"] = f"已保存: {fname}"
+                _st_battle["current"] = f"战斗{ep_num:03d}"
+                _st_battle["validation_errors"] = []
+            _battle_add_log(f"💾 保存: {fname} ✅ 校验通过")
+            return True
+            
+        except Exception as e:
+            with _battle_lock:
+                _st_battle["streaming"] = False
+            
+            if full_content_chunks:
+                partial = ''.join(full_content_chunks)
+                if len(partial) > 200:
+                    fail_dir = BATTLE_SCRIPT_DIR / "失败脚本"
+                    fail_dir.mkdir(exist_ok=True)
+                    ts = datetime.now().strftime("%m%d_%H%M")
+                    fail_name = f"战斗{ep_num:03d}_API中断_{ts}.md"
+                    (fail_dir / fail_name).write_text(partial, encoding="utf-8")
+                    _battle_add_log(f"📁 API中断，已保存片段")
+            
+            _battle_add_log(f"❌ 失败: {e}")
+            with _battle_lock: _st_battle["step"] = f"错误: {str(e)[:80]}"
+            
+            if attempt < MAX_RETRIES:
+                _battle_add_log(f"🔄 10秒后重试（{attempt}/{MAX_RETRIES}）...")
+                time.sleep(10)
+                continue
+            else:
+                with _battle_lock: _st_battle["errors"] += 1
+                return False
+    
+    return False
+
+def battle_gen_loop():
+    global _st_battle
+    _battle_add_log(f"⚔️ 启动！{DURATION_MIN}分钟持续生成战斗脚本...")
+    start = time.time()
+    
+    try:
+        while True:
+            with _battle_lock:
+                if not _st_battle["running"]:
+                    break
+            elapsed = time.time() - start
+            remaining = DURATION_MIN * 60 - elapsed
+            if remaining <= 0: break
+            with _battle_lock: _st_battle["remaining"] = int(remaining)
+            if remaining < 180:
+                _battle_add_log("⏰ 不足3分钟，停止生成")
+                break
+            
+            success = generate_battle_one()
+            if not success:
+                _battle_add_log("⚠️ 失败，10秒后重试")
+                time.sleep(10)
+                continue
+            
+            elapsed = time.time() - start
+            remaining = DURATION_MIN * 60 - elapsed
+            with _battle_lock: _st_battle["remaining"] = int(remaining)
+            if remaining <= 0: break
+            time.sleep(5)
+    except Exception as e:
+        _battle_add_log(f"💥 异常: {e}")
+    finally:
+        with _battle_lock:
+            _st_battle["running"] = False
+            _st_battle["completed"] = True
+            _st_battle["remaining"] = 0
+            _st_battle["step"] = "完成!"
+        _battle_add_log("=" * 40)
+        _battle_add_log(f"⚔️ 战斗生成完成！共生成了 {_st_battle['total']} 集")
+        if _st_battle["errors"]: _battle_add_log(f"⚠️ {_st_battle['errors']} 次错误")
+        _battle_add_log("=" * 40)
+
+def start_battle_gen():
+    global _st_battle, _battle_gen_thread
+    with _battle_lock:
+        if _st_battle["running"]: return
+        _st_battle.update(running=True,completed=False,total=0,errors=0,logs=[],
+                          remaining=DURATION_MIN*60,step="启动中...",current="初始化...",
+                          start_time=time.time(),streaming=False,stream_content="",stream_ep=0,
+                          validation_errors=[], failed_count=0)
+    _battle_gen_thread = threading.Thread(target=battle_gen_loop, daemon=True)
+    _battle_gen_thread.start()
+
+def stop_battle_gen():
+    global _st_battle
+    with _battle_lock:
+        _st_battle["running"] = False
+        _st_battle["step"] = "已手动停止"
+    _battle_add_log("⏹ 用户手动停止")
+
 # ═══ 主循环 ═══
 def gen_loop():
     global _st
@@ -779,13 +1161,31 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/api/status":
             self._json(get_status())
+        elif self.path == "/api/battle/status":
+            self._json(get_battle_status())
         elif self.path.startswith("/api/file?name="):
-            # 读取指定 md 文件内容
+            # 读取指定 md 文件内容（普通分镜）
             from urllib.parse import unquote
             raw = self.path.split("?name=", 1)[1]
             fname = unquote(raw)
             fp = (SCRIPT_DIR / fname).resolve()
-            # 防止路径穿越：确保解析后的路径仍在 WORK_DIR 内
+            if not str(fp).startswith(str(WORK_DIR.resolve())):
+                self._json({"error": "非法文件路径"}, 403)
+                return
+            if fp.exists() and fp.suffix.lower() in (".md", ".txt"):
+                try:
+                    content = fp.read_text(encoding="utf-8")
+                    self._json({"name": fname, "content": content, "size": len(content)})
+                except Exception as e:
+                    self._json({"error": f"读取失败: {e}"}, 500)
+            else:
+                self._json({"error": "文件不存在或类型不支持"}, 404)
+        elif self.path.startswith("/api/battle/file?name="):
+            # 读取战斗分镜文件
+            from urllib.parse import unquote
+            raw = self.path.split("?name=", 1)[1]
+            fname = unquote(raw)
+            fp = (BATTLE_SCRIPT_DIR / fname).resolve()
             if not str(fp).startswith(str(WORK_DIR.resolve())):
                 self._json({"error": "非法文件路径"}, 403)
                 return
@@ -816,6 +1216,12 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/api/stop":
             stop_gen()
             self._json({"ok":True})
+        elif self.path == "/api/battle/start":
+            start_battle_gen()
+            self._json({"ok":True, "mode":"battle"})
+        elif self.path == "/api/battle/stop":
+            stop_battle_gen()
+            self._json({"ok":True, "mode":"battle"})
         elif self.path == "/api/config":
             try:
                 content_length = int(self.headers.get('Content-Length', 0))
