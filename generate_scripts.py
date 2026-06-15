@@ -13,7 +13,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 # ═══ 配置 ═══
 ROOT_DIR = Path(__file__).parent.resolve()
 WORK_DIR = ROOT_DIR  # .env、项目文档等
-SCRIPT_DIR = ROOT_DIR / "分镜脚本"  # 生成的分镜脚本存放处
+SCRIPT_DIR = ROOT_DIR / "普通分镜脚本"  # 生成的分镜脚本存放处
 TOOL_DIR = ROOT_DIR / "工具脚本"
 DURATION_MIN = 30
 PORT = 8765
@@ -615,7 +615,7 @@ def generate_one():
             passed, failures, warnings = validate_script(response, ep_num)
             
             if not passed:
-                # 保存到 分镜脚本/失败脚本/
+                # 保存到 普通分镜脚本/失败脚本/
                 fail_dir = SCRIPT_DIR / "失败脚本"
                 fail_dir.mkdir(exist_ok=True)
                 ts = datetime.now().strftime("%m%d_%H%M")
@@ -687,7 +687,7 @@ def generate_one():
                     ts = datetime.now().strftime("%m%d_%H%M")
                     fail_name = f"脚本{ep_num:03d}_API中断_{ts}.md"
                     (fail_dir / fail_name).write_text(partial, encoding="utf-8")
-                    _add_log(f"📁 API中断，已保存片段到 分镜脚本/失败脚本/{fail_name}")
+                    _add_log(f"📁 API中断，已保存片段到 普通分镜脚本/失败脚本/{fail_name}")
             
             _add_log(f"❌ 失败: {e}")
             with _lock: _st["step"] = f"错误: {str(e)[:80]}"
