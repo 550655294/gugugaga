@@ -239,11 +239,11 @@ def validate_script(content, ep_num):
     checks = [
         # (编号, 描述, 检查函数)
         ("1", "文件第一行不能是『---』", lambda c: not c.lstrip().startswith("---")),
-        ("2", "包含📋 生成操作卡", lambda c: "生成操作卡" in c or "操作卡" in c),
+        ("2", "包含📋 生成操作卡", lambda c: "生成操作卡" in _before_checklist(c) or "操作卡" in _before_checklist(c)),
         ("3", "(v4.17) 操作卡数量正确：单长=1张 / 双段独立=2张（场景一+场景二）", lambda c: _check_op_card_count(c)),
         ("4", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
         ("5", "包含中文提示词", lambda c: "中文提示词" in c),
-        ("6", "包含⚠️ 角色铁律", lambda c: "角色铁律" in c),
+        ("6", "包含⚠️ 角色铁律", lambda c: "角色铁律" in _before_checklist(c)),
         ("7", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
         ("8", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
         ("9", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
