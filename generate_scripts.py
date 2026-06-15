@@ -730,7 +730,11 @@ class Handler(BaseHTTPRequestHandler):
             from urllib.parse import unquote
             raw = self.path.split("?name=", 1)[1]
             fname = unquote(raw)
-            fp = WORK_DIR / fname
+            fp = (WORK_DIR / fname).resolve()
+            # 防止路径穿越：确保解析后的路径仍在 WORK_DIR 内
+            if not str(fp).startswith(str(WORK_DIR.resolve())):
+                self._json({"error": "非法文件路径"}, 403)
+                return
             if fp.exists() and fp.suffix.lower() in (".md", ".txt"):
                 try:
                     content = fp.read_text(encoding="utf-8")
@@ -759,7 +763,11 @@ class Handler(BaseHTTPRequestHandler):
             stop_gen()
             self._json({"ok":True})
         elif self.path == "/api/config":
-            content_length = int(self.headers.get('Content-Length', 0))
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+            except (ValueError, TypeError):
+                self._json({"error": "invalid Content-Length"}, 400)
+                return
             if content_length == 0:
                 self._json({"error": "empty body"}, 400)
                 return
