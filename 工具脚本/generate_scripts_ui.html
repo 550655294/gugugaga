@@ -628,7 +628,8 @@ function applySort(){
 function manualRefresh(){
   let btn = document.getElementById('refreshBtn');
   btn.classList.add('spin');
-  fetch('/api/status').then(r=>r.json()).then(d=>{
+  let url = battleMode ? '/api/battle/status' : '/api/status';
+  fetch(url).then(r=>r.json()).then(d=>{
     updateFileTree(d.files||[]);
     showToast('🔄 文件列表已刷新');
   }).catch(e=>{
@@ -725,7 +726,7 @@ function buildEditorContent(d){
   lines.push(`    <span class="${kw}">const</span> prompt = <span class="${kw}">this</span>.<span class="${fn}">buildSystemPrompt</span>();`);
   lines.push(`    <span class="${kw}">const</span> response = <span class="${kw}">await</span> <span class="${kw}">this</span>.<span class="${vr}">api</span>.<span class="${fn}">chat</span>({`);
   lines.push(`      system: prompt,`);
-  lines.push(`      user: <span class="${str}">\`创作第\${episode}集，8段双章节24秒格式\`</span>,`);
+  lines.push(`      user: <span class="${str}">\`创作第\${episode}集，双段独立 12-15s×2 格式\`</span>,`);
   lines.push(`    });`);
   lines.push(`    <span class="${kw}">return</span> <span class="${kw}">this</span>.<span class="${fn}">parseAndSave</span>(response);`);
   lines.push(`  }`);
@@ -991,7 +992,7 @@ function buildReqsView(){
   html+=`<div class="req-section">
     <div class="req-section-title">📋 脚本生成条件总览</div>
     <div class="req-section-body">
-      每集剧本由 DeepSeek AI 自动生成，包含 <b>8段双章节24秒</b> 格式的完整分镜脚本。<br>
+      每集剧本由 DeepSeek AI 自动生成，包含 <b>双段独立 12-15s×2</b> 格式的完整分镜脚本。<br>
       输出包含中英文 Seedance 2.0 提示词，可直接导入即梦进行视频生成。<br>
       <span style="color:#888;font-size:11px">⚠️ 启动前请确认以下素材已就绪</span>
     </div>
@@ -1249,7 +1250,7 @@ document.getElementById('tabConfig').onclick = function(){
     `  <span class="vr">maxTokens</span>: <span class="${'nm'}">16000</span>,`,
     `  <span class="vr">temperature</span>: <span class="${'nm'}">0.8</span>,`,
     `  <span class="vr">outputDir</span>: <span class="${'str'}">'E:\\\\咕咕嘎嘎\\\\'</span>,`,
-    `  <span class="vr">format</span>: <span class="${'str'}">'8段双章节 · 24s · 9:16竖屏'</span>,`,
+    `  <span class="vr">format</span>: <span class="${'str'}">'双段独立 · 12-15s×2 · 9:16竖屏'</span>,`,
     `  <span class="vr">platform</span>: <span class="${'str'}">'Seedance 2.0 Fast VIP'</span>,`,
     `  <span class="vr">referenceMode</span>: <span class="${'str'}">'全能参考'</span>,`,
     `};`,

@@ -60,11 +60,15 @@ _st_battle = {"running":False,"total":0,"current":"等待启动...","step":"点�
               "validation_errors":[], "failed_count":0}
 _battle_gen_thread = None
 
-def _add_log(msg):
-    with _lock:
+def _add_log_to(state_dict, state_lock, msg):
+    with state_lock:
         ts = datetime.now().strftime("%H:%M:%S")
-        _st["logs"].append(f"[{ts}] {msg}")
-        if len(_st["logs"]) > 200: _st["logs"] = _st["logs"][-200:]
+        state_dict["logs"].append(f"[{ts}] {msg}")
+        if len(state_dict["logs"]) > 200:
+            state_dict["logs"] = state_dict["logs"][-200:]
+
+def _add_log(msg):
+    _add_log_to(_st, _lock, msg)
 
 def _get_status(state_dict, state_lock, script_dir, glob_pattern):
     with state_lock:
@@ -88,10 +92,7 @@ def get_battle_status():
     return _get_status(_st_battle, _battle_lock, BATTLE_SCRIPT_DIR, "战斗*_分镜脚本.md")
 
 def _battle_add_log(msg):
-    with _battle_lock:
-        ts = datetime.now().strftime("%H:%M:%S")
-        _st_battle["logs"].append(f"[{ts}] {msg}")
-        if len(_st_battle["logs"]) > 200: _st_battle["logs"] = _st_battle["logs"][-200:]
+    _add_log_to(_st_battle, _battle_lock, msg)
 
 # ═══ DeepSeek API ═══
 def call_api(system_prompt, user_prompt, max_tokens=8192):
@@ -167,48 +168,41 @@ def next_ep_num():
     eps = get_episodes()
     return max(n for n,_ in eps) + 1 if eps else 1
 
-def used_themes():
-    """从脚本文件名提取主题关键词，AI 必须严格避开"""
+def _used_themes(script_dir, name_pattern, suffix_pattern, fallback_pattern=None):
+    """统一提取主题关键词，AI 必须严格避开"""
     raw = set()
     noise = {"校验失败","分镜脚本","即梦生成","抖音","标题","简介"}
-    
-    for scan_dir in [SCRIPT_DIR]:
-        if not scan_dir.exists():
-            continue
-        for f in sorted(scan_dir.glob("*.md")):
-            name = f.stem  # 去掉 .md
-            # 匹配: 脚本003_偷吃布丁_分镜脚本 / 第8话_第一次吃柠檬 / 第18话_称体重的暴击_长视频
-            m = re.search(r'[第脚本]\d+[套话集]?_?(.+?)(?:_分镜脚本)?$', name)
-            if m:
-                kw = m.group(1).strip().rstrip("_")
-                skip = False
-                for n in noise:
-                    if n in kw:
-                        skip = True
-                        break
-                if not skip and len(kw) >= 2 and not kw.isdigit():
-                    # 去 _长视频 后缀，去 _抖音标题简介 后缀
-                    kw = re.sub(r'_(?:长视频|抖音标题简介)$', '', kw)
-                    raw.add(kw)
-    
-    # 去重合并：同名变体归一（抱枕大作战/抱枕大战/抱枕堡垒 → 抱枕）
+    script_dir.mkdir(exist_ok=True)
+    for f in sorted(script_dir.glob("*.md")):
+        name = f.stem
+        m = re.search(name_pattern, name)
+        if m:
+            kw = m.group(1).strip().rstrip("_")
+            skip = any(n in kw for n in noise)
+            if not skip and len(kw) >= 2 and not kw.isdigit():
+                kw = re.sub(r'_(?:长视频|抖音标题简介)$', '', kw)
+                raw.add(kw)
     themes = set()
     for t in raw:
-        base = re.sub(r'(大作战|大战|大冒险|风波|失踪事件|争夺战|堡垒|太空船)$', '', t)
+        base = re.sub(suffix_pattern, '', t)
         themes.add(base.strip().rstrip("_")[:30])
-    
-    # 兜底：对无关键词的文件名（如脚本001_分镜脚本.md），从文件内标题提取
-    for f in sorted(SCRIPT_DIR.glob("脚本*_分镜脚本.md")):
-        try:
-            first = f.read_text(encoding="utf-8")[:200]
-            tm = re.search(r'脚本\d+_(.+?)_分镜脚本', first)
-            if tm:
-                kw = tm.group(1).strip()
-                if len(kw) >= 2:
-                    themes.add(kw[:30])
-        except:
-            pass
+    if fallback_pattern:
+        for f in sorted(script_dir.glob(fallback_pattern)):
+            try:
+                first = f.read_text(encoding="utf-8")[:200]
+                tm = re.search(r'脚本\d+_(.+?)_分镜脚本', first)
+                if tm:
+                    kw = tm.group(1).strip()
+                    if len(kw) >= 2:
+                        themes.add(kw[:30])
+            except:
+                pass
     return themes
+
+def used_themes():
+    return _used_themes(SCRIPT_DIR, r'[第脚本]\d+[套话集]?_?(.+?)(?:_分镜脚本)?$',
+                        r'(大作战|大战|大冒险|风波|失踪事件|争夺战|堡垒|太空船)$',
+                        "脚本*_分镜脚本.md")
 
 def theme_similarity_warnings(blocked_themes):
     """纯数据驱动：从已用主题中检测高频动宾模式，0硬编码
@@ -602,39 +596,50 @@ def build_system_prompt():
 ### 参考资料（已生成剧本的格式参考）
 {refs if refs else '暂无已生成剧本，请按规范文档中的模板输出。'}"""
 
-def generate_one():
-    global _st
+def _generate_one(pipe):
+    """统一生成函数。pipe = {state, lock, log_fn, next_ep, build_prompt,
+       validate, script_dir, ep_prefix, used_themes, title_icon, user_prompt_prefix}"""
+    state = pipe["state"]
+    lock = pipe["lock"]
+    log_fn = pipe["log_fn"]
+    next_ep = pipe["next_ep"]
+    build_prompt = pipe["build_prompt"]
+    validate = pipe["validate"]
+    script_dir = pipe["script_dir"]
+    ep_prefix = pipe["ep_prefix"]
+    used_themes_fn = pipe["used_themes"]
+    title_icon = pipe.get("title_icon", "🐧")
+    user_prompt_prefix = pipe.get("user_prompt_prefix", "请生成脚本")
+
     MAX_RETRIES = 3
-    prev_failures = []  # 记住上次校验失败的原因，用于重试反馈
-    
+    prev_failures = []
+
     for attempt in range(1, MAX_RETRIES + 1):
-        # 检查是否被手动停止
-        with _lock:
-            if not _st["running"]:
+        with lock:
+            if not state["running"]:
                 return False
-        
-        ep_num = next_ep_num()
-        with _lock:
-            _st["current"] = f"脚本{ep_num:03d}生成中..."
-            _st["streaming"] = True
-            _st["stream_content"] = ""
-            _st["stream_ep"] = ep_num
-            _st["validation_errors"] = []
-        
+
+        ep_num = next_ep()
+        with lock:
+            state["current"] = f"{ep_prefix}{ep_num:03d}生成中..."
+            state["streaming"] = True
+            state["stream_content"] = ""
+            state["stream_ep"] = ep_num
+            state["validation_errors"] = []
+
         if attempt == 1:
-            _add_log(f"📝 开始生成脚本{ep_num:03d}...")
+            log_fn(f"📝 开始生成{ep_prefix}{ep_num:03d}...")
         else:
-            _add_log(f"🔄 重试第{attempt}次 生成脚本{ep_num:03d}...")
-        
-        full_content_chunks = []  # try 外部初始化，确保 except 可访问
-        
+            log_fn(f"🔄 重试第{attempt}次 生成{ep_prefix}{ep_num:03d}...")
+
+        full_content_chunks = []
+
         try:
-            with _lock: _st["step"] = "调用 DeepSeek API（流式）..."
-            _add_log("🤖 请求 DeepSeek API（实时流式输出）...")
-            
-            sys_prompt = build_system_prompt()
-            
-            # 构建用户指令：如果有之前失败的原因，明确告知 AI 修正
+            with lock: state["step"] = "调用 DeepSeek API（流式）..."
+            log_fn("🤖 请求 DeepSeek API（实时流式输出）...")
+
+            sys_prompt = build_prompt()
+
             retry_feedback = ""
             if prev_failures:
                 fix_instructions = []
@@ -650,105 +655,104 @@ def generate_one():
 {chr(10).join(fix_instructions)}
 
 这些是自动化校验规则，必须逐字满足。"""
-            
-            # 构建已用主题黑名单 + 相似度警告（纯数据驱动）
-            blocked = used_themes()
+
+            blocked = used_themes_fn()
             sim_saturated, sim_warnings = theme_similarity_warnings(blocked)
             blocked_str = "\n".join(f"  - ❌ {t}" for t in sorted(blocked)) if blocked else "  （暂无）"
-            
-            user_prompt = f"请生成脚本{ep_num:03d}的即梦提交内容。\n\n"
-            
-            # 相似度警告
+
+            user_prompt = f"{user_prompt_prefix}{ep_num:03d}。\n\n"
             if sim_warnings:
                 for w in sim_warnings:
                     user_prompt += f"## ⚠️ {w}\n\n"
-            
-            user_prompt += f"## 🚫 已用主题严格黑名单（绝对不得使用以下任一主题或近义变体）：\n{blocked_str}\n\n"
-            user_prompt += f"⚠️ 严格遵守系统提示中的「完整生成规范文档」全部规则，逐项对照执行，不得跳过。{retry_feedback}\n\n直接输出，不要省略。"
-            
+            user_prompt += f"## 🚫 已用主题黑名单：\n{blocked_str}\n\n"
+            user_prompt += f"⚠️ 严格遵守系统提示中的规范文档全部规则，逐项对照执行，不得跳过。{retry_feedback}\n\n直接输出，不要省略。"
+
             def on_chunk(text):
                 full_content_chunks.append(text)
-                with _lock:
-                    _st["stream_content"] = ''.join(full_content_chunks)
-            
+                with lock:
+                    state["stream_content"] = ''.join(full_content_chunks)
+
             call_api_streaming(sys_prompt, user_prompt, on_chunk, 8192)
             response = ''.join(full_content_chunks)
-            
-            with _lock: _st["streaming"] = False
-            _add_log(f"✅ 流式响应完成（{len(response)}字）")
-            
+
+            with lock: state["streaming"] = False
+            log_fn(f"✅ 流式响应完成（{len(response)}字）")
+
             # ═══ 校验 ═══
-            passed, failures, warnings = validate_script(response, ep_num)
-            
+            passed, failures, warnings = validate(response, ep_num)
+
             if not passed:
                 fail_detail = "、".join(failures[:5])
-                with _lock:
-                    _st["validation_errors"] = failures
-                    _st["failed_count"] += 1
-                _add_log(f"⚠️ 校验未通过（{len(failures)}项）: {fail_detail}，内容已丢弃")
+                with lock:
+                    state["validation_errors"] = failures
+                    state["failed_count"] += 1
+                log_fn(f"⚠️ 校验未通过（{len(failures)}项）: {fail_detail}，内容已丢弃")
                 if warnings:
                     for w in warnings:
-                        _add_log(w)
-                
-                # 🔥 记住失败原因，下次重试时反馈给 AI
+                        log_fn(w)
                 prev_failures = failures[:]
-                
                 if attempt < MAX_RETRIES:
-                    _add_log(f"🔄 {5}秒后重试（{attempt}/{MAX_RETRIES}，将反馈失败原因给AI）...")
+                    log_fn(f"🔄 5秒后重试（{attempt}/{MAX_RETRIES}，将反馈失败原因给AI）...")
                     time.sleep(5)
                     continue
                 else:
-                    _add_log(f"❌ 已达最大重试次数，放弃脚本{ep_num:03d}")
-                    with _lock: _st["errors"] += 1
+                    log_fn(f"❌ 已达最大重试次数，放弃{ep_prefix}{ep_num:03d}")
+                    with lock: state["errors"] += 1
                     return False
-            
-            # ═══ 通过校验，正常保存 ═══
+
             if warnings:
                 for w in warnings:
-                    _add_log(w)
-            
-            # v4.18: 从生成标题动态提取关键词 → 取消硬编码文件名
-            title_match = re.search(r'#\s*🐧\s*脚本\d+_(.+?)_分镜脚本', response)
+                    log_fn(w)
+
+            # 从生成标题动态提取关键词
+            safe_chars = r'[\\/*?:"<>|🐧⚔️]'
+            title_regex = rf'#\s*{re.escape(title_icon)}\s*{re.escape(ep_prefix)}\d+_(.+?)_分镜脚本'
+            title_match = re.search(title_regex, response)
             if title_match:
                 keyword = title_match.group(1)
-                fname = f"脚本{ep_num:03d}_{keyword}_分镜脚本.md"
+                fname = f"{ep_prefix}{ep_num:03d}_{keyword}_分镜脚本.md"
             else:
-                # 兜底：从任意标题中提取
                 h1_match = re.search(r'#\s*(.+)', response)
                 if h1_match:
-                    safe = re.sub(r'[\\/*?:"<>|🐧]', '', h1_match.group(1)).strip()[:30]
-                    fname = f"脚本{ep_num:03d}_{safe}_分镜脚本.md" if safe else f"脚本{ep_num:03d}_分镜脚本.md"
+                    safe = re.sub(safe_chars, '', h1_match.group(1)).strip()[:30]
+                    fname = f"{ep_prefix}{ep_num:03d}_{safe}_分镜脚本.md" if safe else f"{ep_prefix}{ep_num:03d}_分镜脚本.md"
                 else:
-                    fname = f"脚本{ep_num:03d}_分镜脚本.md"
-            SCRIPT_DIR.mkdir(exist_ok=True)
-            (SCRIPT_DIR / fname).write_text(response, encoding="utf-8")
-            
-            with _lock:
-                _st["total"] += 1
-                _st["step"] = f"已保存: {fname}"
-                _st["current"] = f"脚本{ep_num:03d}"
-                _st["validation_errors"] = []
-            _add_log(f"💾 保存: {fname} ✅ 校验通过")
+                    fname = f"{ep_prefix}{ep_num:03d}_分镜脚本.md"
+
+            script_dir.mkdir(exist_ok=True)
+            (script_dir / fname).write_text(response, encoding="utf-8")
+
+            with lock:
+                state["total"] += 1
+                state["step"] = f"已保存: {fname}"
+                state["current"] = f"{ep_prefix}{ep_num:03d}"
+                state["validation_errors"] = []
+            log_fn(f"💾 保存: {fname} ✅ 校验通过")
             return True
-            
+
         except Exception as e:
-            with _lock:
-                _st["streaming"] = False
-            
-            # API调用异常：不保存失败片段
-            
-            _add_log(f"❌ 失败: {e}")
-            with _lock: _st["step"] = f"错误: {str(e)[:80]}"
-            
+            with lock:
+                state["streaming"] = False
+            log_fn(f"❌ 失败: {e}")
+            with lock: state["step"] = f"错误: {str(e)[:80]}"
             if attempt < MAX_RETRIES:
-                _add_log(f"🔄 {10}秒后重试（{attempt}/{MAX_RETRIES}）...")
+                log_fn(f"🔄 10秒后重试（{attempt}/{MAX_RETRIES}）...")
                 time.sleep(10)
                 continue
             else:
-                with _lock: _st["errors"] += 1
+                with lock: state["errors"] += 1
                 return False
-    
+
     return False
+
+def generate_one():
+    return _generate_one({
+        "state": _st, "lock": _lock, "log_fn": _add_log,
+        "next_ep": next_ep_num, "build_prompt": build_system_prompt,
+        "validate": validate_script, "script_dir": SCRIPT_DIR,
+        "ep_prefix": "脚本", "used_themes": used_themes,
+        "title_icon": "🐧", "user_prompt_prefix": "请生成脚本"
+    })
 
 # ═══ 战斗分镜脚本生成 ═══
 def get_battle_episodes():
@@ -764,39 +768,18 @@ def next_battle_ep_num():
     return max(n for n,_ in eps) + 1 if eps else 1
 
 def battle_used_themes():
-    """从战斗脚本文件名提取主题关键词"""
-    raw = set()
-    noise = {"校验失败","分镜脚本","即梦生成","抖音","标题","简介"}
-    BATTLE_SCRIPT_DIR.mkdir(exist_ok=True)
-    for f in sorted(BATTLE_SCRIPT_DIR.glob("*.md")):
-        name = f.stem
-        m = re.search(r'战斗\d+_?(.+?)(?:_分镜脚本)?$', name)
-        if m:
-            kw = m.group(1).strip().rstrip("_")
-            if kw not in noise and len(kw) >= 2 and not kw.isdigit():
-                kw = re.sub(r'_(?:长视频|抖音标题简介)$', '', kw)
-                raw.add(kw)
-    themes = set()
-    for t in raw:
-        base = re.sub(r'(大作战|大战|对决|决斗|激战|死斗)$', '', t)
-        themes.add(base.strip().rstrip("_")[:30])
-    return themes
+    return _used_themes(BATTLE_SCRIPT_DIR, r'战斗\d+_?(.+?)(?:_分镜脚本)?$',
+                        r'(大作战|大战|对决|决斗|激战|死斗)$')
 
 def build_battle_system_prompt():
     battle_spec = _read("项目文档/咕嘎战斗生成规范文档.md")
-    full_spec = _read("项目文档/咕嘎生成规范文档.md")
     blocked = battle_used_themes()
     _, sim_warnings = theme_similarity_warnings(blocked)
     
-    # 战斗规范文档（唯一权威战斗规范源）
+    # 战斗规范文档（唯一权威战斗规范源——v2.4不再加载普通规范避免AI迷惑）
     battle_section = ""
     if battle_spec and battle_spec.strip():
         battle_section = f"\n## ⭐⭐⭐ 战斗生成规范（最高优先级，逐项对照执行）⭐⭐⭐\n{battle_spec}\n"
-    
-    # 普通规范文档（仅作为角色设定/微动作库参考）
-    spec_section = ""
-    if full_spec and full_spec.strip():
-        spec_section = f"\n## 📚 参考：角色完整设定与微动作库\n{full_spec}\n"
     
     category_block = ""
     if sim_warnings:
@@ -816,7 +799,6 @@ def build_battle_system_prompt():
     return f"""你是专业 AI 短剧编剧，创作"咕咕嘎嘎"企鹅妹妹系列**战斗短视频**剧本。
 
 {battle_section}
-{spec_section}
 {category_block}
 
 ## 补充材料
@@ -825,123 +807,13 @@ def build_battle_system_prompt():
 **⚠️ 输出时不要省略任何部分，严格按照规范文档逐项输出。**"""
 
 def generate_battle_one():
-    global _st_battle
-    MAX_RETRIES = 3
-    prev_failures = []
-    
-    for attempt in range(1, MAX_RETRIES + 1):
-        with _battle_lock:
-            if not _st_battle["running"]:
-                return False
-        
-        ep_num = next_battle_ep_num()
-        with _battle_lock:
-            _st_battle["current"] = f"战斗{ep_num:03d}生成中..."
-            _st_battle["streaming"] = True
-            _st_battle["stream_content"] = ""
-            _st_battle["stream_ep"] = ep_num
-            _st_battle["validation_errors"] = []
-        
-        if attempt == 1:
-            _battle_add_log(f"⚔️ 开始生成战斗{ep_num:03d}...")
-        else:
-            _battle_add_log(f"🔄 重试第{attempt}次 生成战斗{ep_num:03d}...")
-        
-        full_content_chunks = []
-        
-        try:
-            with _battle_lock: _st_battle["step"] = "调用 DeepSeek API（流式）..."
-            _battle_add_log("🤖 请求 DeepSeek API（实时流式输出）...")
-            
-            sys_prompt = build_battle_system_prompt()
-            
-            retry_feedback = ""
-            if prev_failures:
-                retry_feedback = f"\n## ⚠️ 上次校验失败，必须修正：{'；'.join(prev_failures[:5])}\n"
-            
-            blocked = battle_used_themes()
-            sim_saturated, sim_warnings = theme_similarity_warnings(blocked)
-            blocked_str = "\n".join(f"  - ❌ {t}" for t in sorted(blocked)) if blocked else "  （暂无）"
-            
-            user_prompt = f"请生成战斗分镜脚本 战斗{ep_num:03d}。\n\n"
-            if sim_warnings:
-                for w in sim_warnings:
-                    user_prompt += f"## ⚠️ {w}\n\n"
-            user_prompt += f"## 🚫 已用战斗主题黑名单：\n{blocked_str}\n\n"
-            user_prompt += f"⚠️ 严格遵守战斗规范，萌系战斗风格，有趣但不暴力。{retry_feedback}\n直接输出，不要省略。"
-
-            def on_chunk(text):
-                full_content_chunks.append(text)
-                with _battle_lock:
-                    _st_battle["stream_content"] = ''.join(full_content_chunks)
-            
-            call_api_streaming(sys_prompt, user_prompt, on_chunk, 8192)
-            response = ''.join(full_content_chunks)
-            
-            with _battle_lock: _st_battle["streaming"] = False
-            _battle_add_log(f"✅ 流式响应完成（{len(response)}字）")
-            
-            # 校验（战斗模式放宽 #17 #18 身体部位安全检查）
-            passed, failures, warnings = _validate_battle_script(response, ep_num)
-            
-            if not passed:
-                with _battle_lock:
-                    _st_battle["validation_errors"] = failures
-                    _st_battle["failed_count"] += 1
-                _battle_add_log(f"⚠️ 校验未通过（{len(failures)}项）: {'、'.join(failures[:5])}")
-                
-                prev_failures = failures[:]
-                if attempt < MAX_RETRIES:
-                    _battle_add_log(f"🔄 5秒后重试（{attempt}/{MAX_RETRIES}）...")
-                    time.sleep(5)
-                    continue
-                else:
-                    _battle_add_log(f"❌ 已达最大重试次数")
-                    with _battle_lock: _st_battle["errors"] += 1
-                    return False
-            
-            # 保存
-            title_match = re.search(r'#\s*⚔️\s*战斗\d+_(.+?)_分镜脚本', response)
-            if title_match:
-                keyword = title_match.group(1)
-                fname = f"战斗{ep_num:03d}_{keyword}_分镜脚本.md"
-            else:
-                h1_match = re.search(r'#\s*(.+)', response)
-                if h1_match:
-                    safe = re.sub(r'[\\/*?:"<>|⚔️🐧]', '', h1_match.group(1)).strip()[:30]
-                    fname = f"战斗{ep_num:03d}_{safe}_分镜脚本.md" if safe else f"战斗{ep_num:03d}_分镜脚本.md"
-                else:
-                    fname = f"战斗{ep_num:03d}_分镜脚本.md"
-            
-            BATTLE_SCRIPT_DIR.mkdir(exist_ok=True)
-            (BATTLE_SCRIPT_DIR / fname).write_text(response, encoding="utf-8")
-            
-            with _battle_lock:
-                _st_battle["total"] += 1
-                _st_battle["step"] = f"已保存: {fname}"
-                _st_battle["current"] = f"战斗{ep_num:03d}"
-                _st_battle["validation_errors"] = []
-            _battle_add_log(f"💾 保存: {fname} ✅ 校验通过")
-            return True
-            
-        except Exception as e:
-            with _battle_lock:
-                _st_battle["streaming"] = False
-            
-            # API中断：不保存失败片段
-            
-            _battle_add_log(f"❌ 失败: {e}")
-            with _battle_lock: _st_battle["step"] = f"错误: {str(e)[:80]}"
-            
-            if attempt < MAX_RETRIES:
-                _battle_add_log(f"🔄 10秒后重试（{attempt}/{MAX_RETRIES}）...")
-                time.sleep(10)
-                continue
-            else:
-                with _battle_lock: _st_battle["errors"] += 1
-                return False
-    
-    return False
+    return _generate_one({
+        "state": _st_battle, "lock": _battle_lock, "log_fn": _battle_add_log,
+        "next_ep": next_battle_ep_num, "build_prompt": build_battle_system_prompt,
+        "validate": _validate_battle_script, "script_dir": BATTLE_SCRIPT_DIR,
+        "ep_prefix": "战斗", "used_themes": battle_used_themes,
+        "title_icon": "⚔️", "user_prompt_prefix": "请生成战斗分镜脚本 战斗"
+    })
 
 def _gen_loop(state_dict, state_lock, log_fn, generate_fn, icon="🐧"):
     log_fn(f"{icon} 启动！{DURATION_MIN}分钟持续生成...")
