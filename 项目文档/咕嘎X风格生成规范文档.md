@@ -209,6 +209,7 @@ film grain | lens flare | light leak | anamorphic | 8K | auto WB shift | focus b
 参考图4-6：可选（表情/服装/光影参考）
 
 Prompt标注：主体参考@图1，场景参考@图2，姿态参考@图3
+⚠️ @引用仅需在角色设定（角色A/角色B）和角色铁律处各出现一次，分镜描述中禁止重复标注。
 ```
 
 ---
