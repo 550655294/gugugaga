@@ -258,8 +258,8 @@ def theme_similarity_warnings(blocked_themes):
 def analyze_usage_stats():
     """分析已生成脚本的模式/角色使用统计，智能均衡轮换"""
     mode_counts = {"A_大手": 0, "B_第二角色": 0, "C_独角戏": 0}
-    char_counts = {"Doro": 0, "菲比": 0}
-    char_episodes = {"Doro": [], "菲比": []}
+    char_counts = {"菲比": 0}
+    char_episodes = {"菲比": []}
     
     for f in sorted(SCRIPT_DIR.glob("脚本*_分镜脚本.md")):
         try:
@@ -269,14 +269,9 @@ def analyze_usage_stats():
             
             # 检测模式
             has_hand = bool(re.search(r'(人手|人的手|手指|\bhand\b|五指|大手)', c))
-            has_doro = bool(re.search(r'(Doro|doro|粉狗|粉色短发|X形面纹)', c))
             has_phoebe = bool(re.search(r'(菲比|Phoebe|phoebe|金发修女|隐海修会|蓝色大眼修女)', c))
             
-            if has_doro:
-                mode_counts["B_第二角色"] += 1
-                char_counts["Doro"] += 1
-                char_episodes["Doro"].append(ep_num)
-            elif has_phoebe:
+            if has_phoebe:
                 mode_counts["B_第二角色"] += 1
                 char_counts["菲比"] += 1
                 char_episodes["菲比"].append(ep_num)
@@ -600,7 +595,7 @@ def build_system_prompt():
 - 🖐 大手入镜：{mode_counts['A_大手']} 集（{a_ratio:.0%}）
 - 👫 第二角色：{mode_counts['B_第二角色']} 集（{b_ratio:.0%}）
 - 🐧 独角戏：{mode_counts['C_独角戏']} 集（{c_ratio:.0%}）
-- 🐶 Doro 已出场 {char_counts.get('Doro', 0)} 次 | ✨ 菲比已出场 {char_counts.get('菲比', 0)} 次（⚠️ B模式「第二角色」已按 v4.18规范停用，历史统计仅供参考）
+- ✨ 菲比已出场 {char_counts.get('菲比', 0)} 次（第二角色池唯一角色，🐶 Doro 已永久移除）
 
 👉 本集建议：{', '.join(mode_suggestions)}
 
