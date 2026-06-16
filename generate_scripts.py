@@ -66,35 +66,26 @@ def _add_log(msg):
         _st["logs"].append(f"[{ts}] {msg}")
         if len(_st["logs"]) > 200: _st["logs"] = _st["logs"][-200:]
 
-def get_status():
-    with _lock:
-        d = dict(_st)
+def _get_status(state_dict, state_lock, script_dir, glob_pattern):
+    with state_lock:
+        d = dict(state_dict)
     with DURATION_MIN_LOCK:
         d["duration_min"] = DURATION_MIN
-    # 附加文件列表（不用锁读文件系统）
+    script_dir.mkdir(exist_ok=True)
     try:
         eps = []
-        for f in sorted(SCRIPT_DIR.glob("脚本*_分镜脚本.md"), reverse=True):
+        for f in sorted(script_dir.glob(glob_pattern), reverse=True):
             eps.append({"name": f.name, "size": f.stat().st_size})
         d["files"] = eps[:20]
     except Exception:
         d["files"] = []
     return d
 
+def get_status():
+    return _get_status(_st, _lock, SCRIPT_DIR, "脚本*_分镜脚本.md")
+
 def get_battle_status():
-    with _battle_lock:
-        d = dict(_st_battle)
-    with DURATION_MIN_LOCK:
-        d["duration_min"] = DURATION_MIN
-    try:
-        eps = []
-        BATTLE_SCRIPT_DIR.mkdir(exist_ok=True)
-        for f in sorted(BATTLE_SCRIPT_DIR.glob("战斗*_分镜脚本.md"), reverse=True):
-            eps.append({"name": f.name, "size": f.stat().st_size})
-        d["files"] = eps[:20]
-    except Exception:
-        d["files"] = []
-    return d
+    return _get_status(_st_battle, _battle_lock, BATTLE_SCRIPT_DIR, "战斗*_分镜脚本.md")
 
 def _battle_add_log(msg):
     with _battle_lock:
@@ -952,47 +943,46 @@ def generate_battle_one():
     
     return False
 
-def battle_gen_loop():
-    global _st_battle
-    _battle_add_log(f"⚔️ 启动！{DURATION_MIN}分钟持续生成战斗脚本...")
+def _gen_loop(state_dict, state_lock, log_fn, generate_fn, icon="🐧"):
+    log_fn(f"{icon} 启动！{DURATION_MIN}分钟持续生成...")
+    log_fn(f"⏰ 预计结束: {(datetime.now()+timedelta(minutes=DURATION_MIN)).strftime('%H:%M:%S')}")
     start = time.time()
-    
     try:
         while True:
-            with _battle_lock:
-                if not _st_battle["running"]:
-                    break
+            with state_lock:
+                if not state_dict["running"]: break
             elapsed = time.time() - start
             remaining = DURATION_MIN * 60 - elapsed
             if remaining <= 0: break
-            with _battle_lock: _st_battle["remaining"] = int(remaining)
+            with state_lock: state_dict["remaining"] = int(remaining)
             if remaining < 180:
-                _battle_add_log("⏰ 不足3分钟，停止生成")
+                log_fn("⏰ 不足3分钟，停止生成")
                 break
-            
-            success = generate_battle_one()
+            success = generate_fn()
             if not success:
-                _battle_add_log("⚠️ 失败，10秒后重试")
+                log_fn("⚠️ 失败，10秒后重试")
                 time.sleep(10)
                 continue
-            
             elapsed = time.time() - start
             remaining = DURATION_MIN * 60 - elapsed
-            with _battle_lock: _st_battle["remaining"] = int(remaining)
+            with state_lock: state_dict["remaining"] = int(remaining)
             if remaining <= 0: break
             time.sleep(5)
     except Exception as e:
-        _battle_add_log(f"💥 异常: {e}")
+        log_fn(f"💥 异常: {e}")
     finally:
-        with _battle_lock:
-            _st_battle["running"] = False
-            _st_battle["completed"] = True
-            _st_battle["remaining"] = 0
-            _st_battle["step"] = "完成!"
-        _battle_add_log("=" * 40)
-        _battle_add_log(f"⚔️ 战斗生成完成！共生成了 {_st_battle['total']} 集")
-        if _st_battle["errors"]: _battle_add_log(f"⚠️ {_st_battle['errors']} 次错误")
-        _battle_add_log("=" * 40)
+        with state_lock:
+            state_dict["running"] = False
+            state_dict["completed"] = True
+            state_dict["remaining"] = 0
+            state_dict["step"] = "完成!"
+        log_fn("=" * 40)
+        log_fn(f"🏁 完成！共生成了 {state_dict['total']} 集")
+        if state_dict["errors"]: log_fn(f"⚠️ {state_dict['errors']} 次错误")
+        log_fn("=" * 40)
+
+def battle_gen_loop():
+    _gen_loop(_st_battle, _battle_lock, _battle_add_log, generate_battle_one, icon="⚔️")
 
 def start_battle_gen():
     global _st_battle, _battle_gen_thread
@@ -1014,47 +1004,7 @@ def stop_battle_gen():
 
 # ═══ 主循环 ═══
 def gen_loop():
-    global _st
-    _add_log(f"🚀 启动！{DURATION_MIN}分钟持续生成...")
-    _add_log(f"⏰ 预计结束: {(datetime.now()+timedelta(minutes=DURATION_MIN)).strftime('%H:%M:%S')}")
-    start = time.time()
-    
-    try:
-        while True:
-            with _lock:
-                if not _st["running"]:
-                    break
-            elapsed = time.time() - start
-            remaining = DURATION_MIN * 60 - elapsed
-            if remaining <= 0: break
-            with _lock: _st["remaining"] = int(remaining)
-            if remaining < 180:
-                _add_log("⏰ 不足3分钟，停止生成")
-                break
-            
-            success = generate_one()
-            if not success:
-                _add_log("⚠️ 失败，10秒后重试")
-                time.sleep(10)
-                continue
-            
-            elapsed = time.time() - start
-            remaining = DURATION_MIN * 60 - elapsed
-            with _lock: _st["remaining"] = int(remaining)
-            if remaining <= 0: break
-            time.sleep(5)
-    except Exception as e:
-        _add_log(f"💥 异常: {e}")
-    finally:
-        with _lock:
-            _st["running"] = False
-            _st["completed"] = True
-            _st["remaining"] = 0
-            _st["step"] = "完成!"
-        _add_log("=" * 40)
-        _add_log(f"🏁 完成！共生成了 {_st['total']} 集")
-        if _st["errors"]: _add_log(f"⚠️ {_st['errors']} 次错误")
-        _add_log("=" * 40)
+    _gen_loop(_st, _lock, _add_log, generate_one)
 
 def start_gen():
     global _st, _gen_thread
@@ -1086,45 +1036,32 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
     
+    def _serve_md_file(self, script_dir):
+        from urllib.parse import unquote
+        raw = self.path.split("?name=", 1)[1]
+        fname = unquote(raw)
+        fp = (script_dir / fname).resolve()
+        if not str(fp).startswith(str(WORK_DIR.resolve())):
+            self._json({"error": "非法文件路径"}, 403)
+            return
+        if fp.exists() and fp.suffix.lower() in (".md", ".txt"):
+            try:
+                content = fp.read_text(encoding="utf-8")
+                self._json({"name": fname, "content": content, "size": len(content)})
+            except Exception as e:
+                self._json({"error": f"读取失败: {e}"}, 500)
+        else:
+            self._json({"error": "文件不存在或类型不支持"}, 404)
+    
     def do_GET(self):
         if self.path == "/api/status":
             self._json(get_status())
         elif self.path == "/api/battle/status":
             self._json(get_battle_status())
         elif self.path.startswith("/api/file?name="):
-            # 读取指定 md 文件内容（普通分镜）
-            from urllib.parse import unquote
-            raw = self.path.split("?name=", 1)[1]
-            fname = unquote(raw)
-            fp = (SCRIPT_DIR / fname).resolve()
-            if not str(fp).startswith(str(WORK_DIR.resolve())):
-                self._json({"error": "非法文件路径"}, 403)
-                return
-            if fp.exists() and fp.suffix.lower() in (".md", ".txt"):
-                try:
-                    content = fp.read_text(encoding="utf-8")
-                    self._json({"name": fname, "content": content, "size": len(content)})
-                except Exception as e:
-                    self._json({"error": f"读取失败: {e}"}, 500)
-            else:
-                self._json({"error": "文件不存在或类型不支持"}, 404)
+            self._serve_md_file(SCRIPT_DIR)
         elif self.path.startswith("/api/battle/file?name="):
-            # 读取战斗分镜文件
-            from urllib.parse import unquote
-            raw = self.path.split("?name=", 1)[1]
-            fname = unquote(raw)
-            fp = (BATTLE_SCRIPT_DIR / fname).resolve()
-            if not str(fp).startswith(str(WORK_DIR.resolve())):
-                self._json({"error": "非法文件路径"}, 403)
-                return
-            if fp.exists() and fp.suffix.lower() in (".md", ".txt"):
-                try:
-                    content = fp.read_text(encoding="utf-8")
-                    self._json({"name": fname, "content": content, "size": len(content)})
-                except Exception as e:
-                    self._json({"error": f"读取失败: {e}"}, 500)
-            else:
-                self._json({"error": "文件不存在或类型不支持"}, 404)
+            self._serve_md_file(BATTLE_SCRIPT_DIR)
         elif self.path in ("/", "/index.html"):
             if HTML_PATH.exists():
                 html = HTML_PATH.read_text(encoding="utf-8")
