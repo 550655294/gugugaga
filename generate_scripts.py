@@ -16,6 +16,7 @@ ROOT_DIR = Path(__file__).parent.resolve()
 WORK_DIR = ROOT_DIR  # .env、项目文档等
 SCRIPT_DIR = ROOT_DIR / "普通分镜脚本"  # 普通日常分镜脚本存放处
 BATTLE_SCRIPT_DIR = ROOT_DIR / "战斗分镜脚本"  # 战斗分镜脚本存放处
+X_STYLE_SCRIPT_DIR = ROOT_DIR / "X风格脚本"  # X/Twitter风格AI视频脚本
 TOOL_DIR = ROOT_DIR / "工具脚本"
 DURATION_MIN = 30
 PORT = 8765
@@ -60,6 +61,14 @@ _st_battle = {"running":False,"total":0,"current":"等待启动...","step":"点�
               "validation_errors":[], "failed_count":0}
 _battle_gen_thread = None
 
+# ═══ X风格模式全局状态 ═══
+_xstyle_lock = threading.Lock()
+_st_xstyle = {"running":False,"total":0,"current":"等待启动...","step":"点击按钮开始","logs":[],
+              "remaining":DURATION_MIN*60,"completed":False,"errors":0,"start_time":None,
+              "streaming":False,"stream_content":"","stream_ep":0,
+              "validation_errors":[], "failed_count":0}
+_xstyle_gen_thread = None
+
 def _add_log_to(state_dict, state_lock, msg):
     with state_lock:
         ts = datetime.now().strftime("%H:%M:%S")
@@ -91,8 +100,14 @@ def get_status():
 def get_battle_status():
     return _get_status(_st_battle, _battle_lock, BATTLE_SCRIPT_DIR, "战斗*_分镜脚本.md")
 
+def get_xstyle_status():
+    return _get_status(_st_xstyle, _xstyle_lock, X_STYLE_SCRIPT_DIR, "X风格*_分镜脚本.md")
+
 def _battle_add_log(msg):
     _add_log_to(_st_battle, _battle_lock, msg)
+
+def _xstyle_add_log(msg):
+    _add_log_to(_st_xstyle, _xstyle_lock, msg)
 
 # ═══ DeepSeek API ═══
 def call_api(system_prompt, user_prompt, max_tokens=8192):
@@ -171,7 +186,7 @@ def next_ep_num():
 def _used_themes(script_dir, name_pattern, suffix_pattern, fallback_pattern=None):
     """统一提取主题关键词，AI 必须严格避开"""
     raw = set()
-    noise = {"校验失败","分镜脚本","即梦生成","抖音","标题","简介"}
+    noise = {"校验失败","分镜脚本","即梦生成","抖音","标题","简介","X风格"}
     script_dir.mkdir(exist_ok=True)
     for f in sorted(script_dir.glob("*.md")):
         name = f.stem
@@ -815,6 +830,103 @@ def generate_battle_one():
         "title_icon": "⚔️", "user_prompt_prefix": "请生成战斗分镜脚本 战斗"
     })
 
+# ═══ X风格分镜脚本生成 ═══
+def get_xstyle_episodes():
+    eps = []
+    X_STYLE_SCRIPT_DIR.mkdir(exist_ok=True)
+    for f in sorted(X_STYLE_SCRIPT_DIR.glob("X风格*_分镜脚本.md")):
+        m = re.match(r'X风格(\d+)_.*分镜脚本\.md', f.name)
+        if m: eps.append((int(m.group(1)), f.name))
+    return eps
+
+def next_xstyle_ep_num():
+    eps = get_xstyle_episodes()
+    return max(n for n,_ in eps) + 1 if eps else 1
+
+def xstyle_used_themes():
+    return _used_themes(X_STYLE_SCRIPT_DIR, r'X风格\d+_?(.+?)(?:_分镜脚本)?$',
+                        r'(大作战|大战|对决|决斗|激战)$')
+
+def _validate_xstyle_script(content, ep_num):
+    """X风格校验：允许氛围叙事，放宽部分格式约束"""
+    failures = []
+    checks = [
+        ("1", "文件第一行不能是『---』", lambda c: not c.lstrip().startswith("---")),
+        ("2", "包含📋 生成操作卡", lambda c: "生成操作卡" in _before_checklist(c) or "操作卡" in _before_checklist(c)),
+        ("3", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
+        ("4", "包含中文提示词", lambda c: "中文提示词" in c),
+        ("5", "包含⚠️ 角色铁律", lambda c: "角色铁律" in _before_checklist(c)),
+        ("6", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
+        ("7", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
+        ("8", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
+        ("9", "包含电影级场景描述", lambda c: "电影级场景描述" in c or "场景描述" in c),
+        ("10", "包含5段关键帧结构", lambda c: "关键帧1" in c and "关键帧5" in c),
+        ("11", "氛围描述占比充足（提示词长度>300字）", lambda c: _xstyle_atmosphere_check(c)),
+        ("12", "@引用融入正文：含『主体严格参考@图片1』", lambda c: "主体严格参考@图片1" in c),
+        ("13", "X风格身体安全", lambda c: _battle_body_safety(c)),
+    ]
+    for num, desc, check_fn in checks:
+        if not check_fn(content):
+            failures.append(f"#{num} {desc}")
+    warnings = []
+    if len(content) < 2000:
+        warnings.append("⚠️ 内容过短（<2000字），可能不完整")
+    passed = len(failures) == 0
+    return passed, failures, warnings
+
+def _xstyle_atmosphere_check(content):
+    """检查中文提示词段落是否有足够的氛围描述"""
+    cn_match = re.search(r'##\s*中文提示词.*?(?=## 自检清单|---\s*\n##)', content, re.DOTALL)
+    if cn_match:
+        cn_text = cn_match.group()
+        return len(cn_text) > 300
+    return False
+
+def build_x_style_system_prompt():
+    xstyle_spec = _read("项目文档/咕嘎X风格生成规范文档.md")
+    blocked = xstyle_used_themes()
+    
+    xstyle_section = ""
+    if xstyle_spec and xstyle_spec.strip():
+        xstyle_section = f"\n## ⭐⭐⭐ X风格生成规范（最高优先级，逐项对照执行）⭐⭐⭐\n{xstyle_spec}\n"
+    
+    blocked_list = "、".join(sorted(blocked)) if blocked else "（无）"
+    
+    return f"""你是专业的 AI 视频导演兼视觉设计师，创作"咕咕嘎嘎"企鹅妹妹系列**X/Twitter风格电影级短视频**。
+
+你的风格参考 X 平台（原Twitter）上顶级 AI 视频创作者的叙事流：
+- 氛围驱动而非动作驱动
+- 场景描述先行，角色融入环境
+- 电影级运镜与光影
+- 每一帧都像电影截图
+
+{xstyle_section}
+
+## 🎯 X风格主题创意指令
+已用X风格主题黑名单：{blocked_list}
+
+**创意规则：**
+- 以上主题一律禁止
+- 创作电影感意境片段：黄昏车站、霓虹雨夜、星海漂流、旧教室阳光、樱花坡道等
+- 主题具有「电影感标题」气质，3-8字
+- 区别于日常萌系（普通分镜）和动作设计（战斗分镜）
+
+## 补充材料
+### 已用X风格主题(请避开): {blocked_list}
+
+**⚠️ 输出时不要省略任何部分，严格按照规范文档逐项输出。**
+**⚠️ 氛围描述必须占提示词50%以上篇幅。**
+**⚠️ 必须包含5段关键帧（开场大景→氛围铺垫→角色入画→情绪高点→意境收尾）。**"""
+
+def generate_x_style_one():
+    return _generate_one({
+        "state": _st_xstyle, "lock": _xstyle_lock, "log_fn": _xstyle_add_log,
+        "next_ep": next_xstyle_ep_num, "build_prompt": build_x_style_system_prompt,
+        "validate": _validate_xstyle_script, "script_dir": X_STYLE_SCRIPT_DIR,
+        "ep_prefix": "X风格", "used_themes": xstyle_used_themes,
+        "title_icon": "🅧", "user_prompt_prefix": "请生成X风格电影级分镜脚本 X风格"
+    })
+
 def _gen_loop(state_dict, state_lock, log_fn, generate_fn, icon="🐧"):
     log_fn(f"{icon} 启动！{DURATION_MIN}分钟持续生成...")
     log_fn(f"⏰ 预计结束: {(datetime.now()+timedelta(minutes=DURATION_MIN)).strftime('%H:%M:%S')}")
@@ -874,6 +986,28 @@ def stop_battle_gen():
         _st_battle["step"] = "已手动停止"
     _battle_add_log("⏹ 用户手动停止")
 
+# ═══ X风格 循环与启动/停止 ═══
+def xstyle_gen_loop():
+    _gen_loop(_st_xstyle, _xstyle_lock, _xstyle_add_log, generate_x_style_one, icon="🅧")
+
+def start_xstyle_gen():
+    global _st_xstyle, _xstyle_gen_thread
+    with _xstyle_lock:
+        if _st_xstyle["running"]: return
+        _st_xstyle.update(running=True,completed=False,total=0,errors=0,logs=[],
+                          remaining=DURATION_MIN*60,step="启动中...",current="初始化...",
+                          start_time=time.time(),streaming=False,stream_content="",stream_ep=0,
+                          validation_errors=[], failed_count=0)
+    _xstyle_gen_thread = threading.Thread(target=xstyle_gen_loop, daemon=True)
+    _xstyle_gen_thread.start()
+
+def stop_xstyle_gen():
+    global _st_xstyle
+    with _xstyle_lock:
+        _st_xstyle["running"] = False
+        _st_xstyle["step"] = "已手动停止"
+    _xstyle_add_log("⏹ 用户手动停止")
+
 # ═══ 主循环 ═══
 def gen_loop():
     _gen_loop(_st, _lock, _add_log, generate_one)
@@ -930,10 +1064,14 @@ class Handler(BaseHTTPRequestHandler):
             self._json(get_status())
         elif self.path == "/api/battle/status":
             self._json(get_battle_status())
+        elif self.path == "/api/xstyle/status":
+            self._json(get_xstyle_status())
         elif self.path.startswith("/api/file?name="):
             self._serve_md_file(SCRIPT_DIR)
         elif self.path.startswith("/api/battle/file?name="):
             self._serve_md_file(BATTLE_SCRIPT_DIR)
+        elif self.path.startswith("/api/xstyle/file?name="):
+            self._serve_md_file(X_STYLE_SCRIPT_DIR)
         elif self.path in ("/", "/index.html"):
             if HTML_PATH.exists():
                 html = HTML_PATH.read_text(encoding="utf-8")
@@ -959,6 +1097,12 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/api/battle/stop":
             stop_battle_gen()
             self._json({"ok":True, "mode":"battle"})
+        elif self.path == "/api/xstyle/start":
+            start_xstyle_gen()
+            self._json({"ok":True, "mode":"xstyle"})
+        elif self.path == "/api/xstyle/stop":
+            stop_xstyle_gen()
+            self._json({"ok":True, "mode":"xstyle"})
         elif self.path == "/api/config":
             try:
                 content_length = int(self.headers.get('Content-Length', 0))

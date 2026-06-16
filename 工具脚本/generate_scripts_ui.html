@@ -134,6 +134,7 @@ body{
 .mode-btn:hover{background:var(--tab);color:var(--text)}
 .mode-btn.active{background:var(--keyword);color:#fff}
 .mode-btn.battle-active{background:var(--pink);color:#fff}
+.mode-btn.xstyle-active{background:var(--green);color:#fff}
 
 /* ── 进度条 ── */
 .progress-bar-wrap{height:3px;background:var(--editor);flex-shrink:0;overflow:hidden}
@@ -384,11 +385,14 @@ body{
     <div class="editor-toolbar no-select">
       <!-- 模式切换 -->
       <div class="mode-switch" id="modeSwitch">
-        <button class="mode-btn active" id="modeNormal" onclick="switchMode(false)" title="普通分镜脚本生成">
+        <button class="mode-btn active" id="modeNormal" onclick="switchMode('normal')" title="普通分镜脚本生成">
           🐧 普通分镜
         </button>
-        <button class="mode-btn" id="modeBattle" onclick="switchMode(true)" title="战斗分镜脚本生成">
+        <button class="mode-btn" id="modeBattle" onclick="switchMode('battle')" title="战斗分镜脚本生成">
           ⚔️ 战斗分镜
+        </button>
+        <button class="mode-btn" id="modeXstyle" onclick="switchMode('xstyle')" title="X/Twitter风格电影级视频脚本">
+          🅧 X风格
         </button>
       </div>
       <span class="tb-sep"></span>
@@ -489,12 +493,34 @@ let streamEp = 0;  // 当前流式输出的集数
 let streamLastLen = 0;  // 上次流式内容长度
 let mdFullContent = '';  // MD查看器完整内容
 let mdTrimmed = true;    // 是否精简视图（默认开启）
-let battleMode = false;  // 当前模式：false=普通分镜, true=战斗分镜
+let currentMode = 'normal';  // 'normal' | 'battle' | 'xstyle'
+
+const MODE_CFG = {
+  normal: {
+    epRegex: /脚本(\d+)[_第]/, dirLabel: 'output/', fileIcon: '🎬', prefix: '脚本',
+    apiStatus: '/api/status', apiFile: '/api/file', apiStart: '/api/start', apiStop: '/api/stop',
+    psScript: 'start_generator.ps1', displayName: '🐧 普通分镜', modeCss: 'active',
+    btnIcon: '▶', btnLabel: 'Run Pipeline', toastLabel: '', liveLabel: '脚本',
+  },
+  battle: {
+    epRegex: /战斗(\d+)_/, dirLabel: 'output/battle/', fileIcon: '⚔️', prefix: '战斗',
+    apiStatus: '/api/battle/status', apiFile: '/api/battle/file', apiStart: '/api/battle/start', apiStop: '/api/battle/stop',
+    psScript: 'start_battle.ps1', displayName: '⚔️ 战斗分镜', modeCss: 'battle-active',
+    btnIcon: '⚔️', btnLabel: 'Run Battle Pipeline', toastLabel: '战斗', liveLabel: '战斗',
+  },
+  xstyle: {
+    epRegex: /X风格(\d+)_/, dirLabel: 'output/xstyle/', fileIcon: '🎥', prefix: 'X风格',
+    apiStatus: '/api/xstyle/status', apiFile: '/api/xstyle/file', apiStart: '/api/xstyle/start', apiStop: '/api/xstyle/stop',
+    psScript: 'start_xstyle.ps1', displayName: '🅧 X风格', modeCss: 'xstyle-active',
+    btnIcon: '🅧', btnLabel: 'Run X Pipeline', toastLabel: 'X风格', liveLabel: 'X风格',
+  }
+};
+function cfg(){ return MODE_CFG[currentMode]; }
 
 // ═══ 排序函数 ═══
 function sortFiles(files, sortMode){
   let sorted = [...files];
-  let epRegex = battleMode ? /战斗(\d+)_/ : /脚本(\d+)[_第]/;
+  let epRegex = cfg().epRegex;
   switch(sortMode){
     case 'ep-asc':
       sorted.sort((a,b)=>{
@@ -582,8 +608,7 @@ function updateFileTree(files){
   // 检测新文件（跳过首次加载）
   if(lastFileCount > 0 && rawFiles.length > lastFileCount){
     let newCount = rawFiles.length - lastFileCount;
-    let label = battleMode ? '战斗' : '';
-    showToast(`🆕 新增 ${newCount} 集${label}！共 ${rawFiles.length} 集`);
+    showToast(`🆕 新增 ${newCount} 集${cfg().toastLabel}！共 ${rawFiles.length} 集`);
   }
   lastFileCount = rawFiles.length;
 
@@ -596,8 +621,10 @@ function updateFileTree(files){
   html += `<div class="file-item"><span class="ficon">⚙</span><span class="fname">pipeline.config.ts</span></div>`;
   html += `<div class="file-item"><span class="ficon">📦</span><span class="fname">types.d.ts</span></div>`;
 
-  if(battleMode){
+  if(currentMode === 'battle'){
     html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ output/battle/ <span style="font-size:10px;color:#666">(${sorted.length}集)</span></div>`;
+  } else if(currentMode === 'xstyle'){
+    html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ output/xstyle/ <span style="font-size:10px;color:#666">(${sorted.length}集)</span></div>`;
   } else {
     html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ output/ <span style="font-size:10px;color:#666">(${sorted.length}集)</span></div>`;
   }
@@ -605,11 +632,9 @@ function updateFileTree(files){
   if(sorted.length > 0){
     for(let f of sorted){
       let epNum = '';
-      let match = f.name.match(battleMode ? /战斗(\d+)_/ : /脚本(\d+)[_第]/);
+      let match = f.name.match(cfg().epRegex);
       epNum = match ? match[1] : '';
-      let icon = battleMode ? '⚔️' : '🎬';
-      let prefix = battleMode ? '战斗' : '脚本';
-      html += `<div class="file-item" onclick="viewMdFile('${he(f.name)}')" title="${prefix}${epNum} · 点击查看"><span class="ficon">${icon}</span><span class="fname">${he(f.name)}</span><span class="fdot g"></span></div>`;
+      html += `<div class="file-item" onclick="viewMdFile('${he(f.name)}')" title="${cfg().prefix}${epNum} · 点击查看"><span class="ficon">${cfg().fileIcon}</span><span class="fname">${he(f.name)}</span><span class="fdot g"></span></div>`;
     }
   } else {
     html += `<div class="file-item"><span class="ficon">📭</span><span class="fname" style="color:#888">(empty)</span></div>`;
@@ -628,7 +653,7 @@ function applySort(){
 function manualRefresh(){
   let btn = document.getElementById('refreshBtn');
   btn.classList.add('spin');
-  let url = battleMode ? '/api/battle/status' : '/api/status';
+  let url = cfg().apiStatus;
   fetch(url).then(r=>r.json()).then(d=>{
     updateFileTree(d.files||[]);
     showToast('🔄 文件列表已刷新');
@@ -780,13 +805,13 @@ function updateProgress(d){
 // ═══ 终端输出 ═══
 function updateTerminal(logs, currentTask){
   let html = '';
-  let psPrefix = battleMode ? '.\\start_battle.ps1' : '.\\start_generator.ps1';
+  let psPrefix = cfg().psScript;
   html += `<div class="term-line d">PS E:\\咕咕嘎嘎&gt; ${psPrefix}</div>`;
   html += `<div class="term-line d">[INFO] 初始化 DeepSeek API 连接... OK</div>`;
   html += `<div class="term-line d">[INFO] 加载共享参数模板... OK</div>`;
   html += `<div class="term-line d">[INFO] 加载提示词规范... OK</div>`;
   html += `<div class="term-line d">[INFO] 工作目录: E:\\咕咕嘎嘎\\</div>`;
-  html += `<div class="term-line d">[INFO] 模式: ${battleMode ? '⚔️ 战斗分镜' : '🐧 普通分镜'}</div>`;
+  html += `<div class="term-line d">[INFO] 模式: ${cfg().displayName}</div>`;
 
   if(logs && logs.length > 0){
     for(let l of logs.slice(-25)){
@@ -852,7 +877,7 @@ function showToast(msg){
 // ═══ 轮询 ═══
 async function poll(){
   try{
-    let statusUrl = battleMode ? '/api/battle/status' : '/api/status';
+    let statusUrl = cfg().apiStatus;
     let r = await fetch(statusUrl);
     let d = await r.json();
     if(d.duration_min) totalDurationSec=d.duration_min*60;
@@ -864,8 +889,7 @@ async function poll(){
     updateStreamView(d);  // ← 实时流式预览
 
     if(d.completed && wasRunning){
-      let label = battleMode ? '战斗' : '';
-      showToast(`✅ 流水线完成！共生成了 ${d.total} 集${label}剧本`);
+      showToast(`✅ 流水线完成！共生成了 ${d.total} 集${cfg().toastLabel}剧本`);
     }
     wasRunning = d.running;
   }catch(e){console.error(e)}
@@ -876,24 +900,25 @@ function he(s){
 }
 
 // ═══ 模式切换 ═══
-function switchMode(toBattle){
-  if(battleMode === toBattle) return;
-  battleMode = toBattle;
+function switchMode(mode){
+  if(currentMode === mode) return;
+  currentMode = mode;
   
   // 更新按钮样式
-  let btnNormal = document.getElementById('modeNormal');
-  let btnBattle = document.getElementById('modeBattle');
-  let tbRun = document.getElementById('tbRun');
+  document.getElementById('modeNormal').className = 'mode-btn';
+  document.getElementById('modeBattle').className = 'mode-btn';
+  document.getElementById('modeXstyle').className = 'mode-btn';
   
-  if(battleMode){
-    btnNormal.classList.remove('active');
-    btnBattle.classList.add('active');
-    tbRun.innerHTML = '<span class="tb-icon">⚔️</span> Run Battle Pipeline';
-  } else {
-    btnBattle.classList.remove('active');
-    btnNormal.classList.add('active');
-    tbRun.innerHTML = '<span class="tb-icon">▶</span> Run Pipeline';
+  if(mode === 'normal'){
+    document.getElementById('modeNormal').className = 'mode-btn active';
+  } else if(mode === 'battle'){
+    document.getElementById('modeBattle').className = 'mode-btn battle-active';
+  } else if(mode === 'xstyle'){
+    document.getElementById('modeXstyle').className = 'mode-btn xstyle-active';
   }
+  
+  // 更新 Run 按钮
+  document.getElementById('tbRun').innerHTML = '<span class="tb-icon">'+cfg().btnIcon+'</span> '+cfg().btnLabel;
   
   // 重置状态
   lastFileCount = 0;
@@ -901,7 +926,7 @@ function switchMode(toBattle){
   
   // 立即刷新
   poll();
-  showToast(battleMode ? '⚔️ 已切换到战斗分镜模式' : '🐧 已切换到普通分镜模式');
+  showToast(cfg().fileIcon+' 已切换到'+cfg().displayName+'模式');
 }
 
 // ═══ 精简视图：只保留提示词+操作卡 ═══
@@ -954,7 +979,7 @@ async function viewMdFile(name){
   overlay.style.display='flex';
   body.textContent='加载中...';
   try{
-    let fileUrl = battleMode ? '/api/battle/file?name=' : '/api/file?name=';
+    let fileUrl = cfg().apiFile;
     let r=await fetch(fileUrl+encodeURIComponent(name));
     let d=await r.json();
     if(d.content){
@@ -1151,11 +1176,10 @@ function startGen(){
   // 即时反馈
   let btn=document.getElementById("tbRun");
   btn.textContent="▶ Connecting..."; btn.disabled=true;
-  let startUrl = battleMode ? '/api/battle/start' : '/api/start';
+  let startUrl = cfg().apiStart;
   fetch(startUrl,{method:'POST'}).then(r=>r.json()).then(d=>{
     if(d.ok){
-      let label = battleMode ? '⚔️ 战斗' : '🐧 普通';
-      showToast(`🚀 ${label}流水线已启动，切换到「生成预览」查看实时内容`);
+      showToast(`🚀 ${cfg().fileIcon} ${cfg().displayName}流水线已启动，切换到「生成预览」查看实时内容`);
       wasRunning=true;
       document.getElementById("tbStop").disabled=false;
       document.getElementById("tbHint").textContent="🔵 生成中...";
@@ -1171,7 +1195,7 @@ function startGen(){
 }
 function stopGen(){
   document.getElementById("tbStop").disabled=true;
-  let stopUrl = battleMode ? '/api/battle/stop' : '/api/stop';
+  let stopUrl = cfg().apiStop;
   fetch(stopUrl,{method:'POST'}).then(r=>r.json()).then(d=>{
     if(d.ok){
       showToast("⏹ 已终止");
