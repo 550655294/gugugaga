@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-🐧 咕咕嘎嘎 剧本自动生成器 v1.7
+🐧 咕咕嘎嘎 剧本自动生成器 v1.8
 DeepSeek AI 驱动 · 纯引擎模式 · 剧情规则全部走规范文档
 📋 支持模式：普通分镜 / 战斗分镜
 访问 http://localhost:8765 查看控制面板
@@ -316,10 +316,10 @@ def validate_script(content, ep_num):
         ("3", "(v4.18) 操作卡数量正确：双段独立必须有场景一+场景二操作卡（2张）", lambda c: _check_op_card_count(c)),
         ("4", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
         ("5", "包含中文提示词", lambda c: "中文提示词" in c),
-        ("6", "包含⚠️ 角色铁律", lambda c: "角色铁律" in _before_checklist(c)),
+        # v4.31: 角色外观锚定嵌入叙事正文，不再需要独立「角色铁律」块
         ("7", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
         ("8", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
-        ("9", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
+        # v4.31: 角色铁律嵌入叙事，"在提示词前"位置检查不再适用
         ("10", "(v4.18) 中文段数：双段独立=【场景一】【场景二】各一段连续叙事", lambda c: _check_segment_count(c)),
         ("11", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
         ("12", "(v4.18) 场景标记正确：必须有【场景一】【场景二】", lambda c: _check_scene_markers(c)),
@@ -329,6 +329,7 @@ def validate_script(content, ep_num):
         ("17", "(v4.9) 身体部位安全：提示词中无翅膀抓握/捧/舀/呆毛勾取/拖拽等工具化描述", lambda c: _v49_body_safety(c)),
         ("18", "(v4.9) 比喻安全：提示词中无'像XX钩子/精密机械/气球/着火/星星眼✨/开出小花'等危险比喻", lambda c: _v49_metaphor_safety(c)),
         ("23", "(v4.18) 🔗 场景二操作卡含跨场景衔接判断（有衔接→给出方案 / 无衔接→标注「无衔接」）", lambda c: _check_cross_scene_continuity(c)),
+        ("27", "(v4.33) ⚠️ 音频铁律：提示词正文末尾必须包含「无任何背景音乐(BGM)，仅保留环境音效」——此行为即梦硬指令", lambda c: _check_audio_no_bgm(c)),
     ]
     
     for num, desc, check_fn in checks:
@@ -352,10 +353,10 @@ def _validate_battle_script(content, ep_num):
         ("3", "(v4.18) 操作卡数量正确：必须有场景一+场景二操作卡（2张）", lambda c: _check_op_card_count(c)),
         ("4", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
         ("5", "包含中文提示词", lambda c: "中文提示词" in c),
-        ("6", "包含⚠️ 角色铁律", lambda c: "角色铁律" in _before_checklist(c)),
+        # v4.31: 角色铁律嵌入叙事，不独立检查
         ("7", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
         ("8", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
-        ("9", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
+        # v4.31: 角色铁律嵌入叙事，跳过独立块检查
         ("10", "段数正确：必须有【场景一】【场景二】", lambda c: _check_segment_count(c)),
         ("11", "包含『自检清单（输出前逐项确认）』", lambda c: "自检清单" in c and "逐项确认" in c),
         ("12", "场景标记正确：必须有【场景一】【场景二】", lambda c: _check_scene_markers(c)),
@@ -527,6 +528,24 @@ def _check_cross_scene_continuity(content):
     body = _before_checklist(content)
     return "跨场景衔接" in body
 
+def _check_audio_no_bgm(content):
+    """(v4.33) 检查提示词正文末尾是否包含音频无BGM硬指令"""
+    # 提取提示词正文（中文提示词部分，排除元数据/即梦参数区块）
+    # 关键：检查「无任何背景音乐」或「无BGM」或「禁止背景音乐」是否出现在提示词正文中
+    prompt_body = _before_checklist(content)
+    # 多种匹配模式覆盖不同写法
+    patterns = [
+        r'无任何背景音乐.*[\(（]BGM[\)）]',
+        r'无[Bb][Gg][Mm].*环境音效',
+        r'禁止背景音乐.*[\(（]BGM[\)）]',
+        r'仅保留.*环境音效',
+        r'无背景音乐',
+    ]
+    for pat in patterns:
+        if re.search(pat, prompt_body):
+            return True
+    return False
+
 def recent_scripts(n=2):
     eps = sorted(get_episodes(), key=lambda x: x[0], reverse=True)[:n]
     texts = []
@@ -658,6 +677,8 @@ def _generate_one(pipe):
                         fix_instructions.append(f'- {f} → **必须在中文提示词之后、全文末尾插入「## 自检清单（输出前逐项确认）」段落**，包含 | # | 检查项 | ✅ | 格式的表格，最后一列全填 ✅')
                     elif "角色铁律" in f:
                         fix_instructions.append(f'- {f} → **中文提示词中必须写「⚠️ 角色铁律」四个字，不是「⚠️ 铁律」**。在提示词标题下紧跟此行')
+                    elif "音频" in f or "BGM" in f or "27" in f:
+                        fix_instructions.append(f'- {f} → **中文提示词正文末尾必须包含「⚠️ 音频：无任何背景音乐(BGM)，仅保留环境音效：[具体列出全部音效]」——此行是发给即梦 AI 的硬指令，不是元数据注释，不可省略！**')
                     else:
                         fix_instructions.append(f'- {f} → 请修正')
                 retry_feedback = f"""
@@ -850,10 +871,10 @@ def _validate_xstyle_script(content, ep_num):
         ("2", "包含📋 生成操作卡", lambda c: "生成操作卡" in _before_checklist(c) or "操作卡" in _before_checklist(c)),
         ("3", "包含🎯 即梦生成参数", lambda c: "即梦生成参数" in c or "Seedance" in c),
         ("4", "包含中文提示词", lambda c: "中文提示词" in c),
-        ("5", "包含⚠️ 角色铁律", lambda c: "角色铁律" in _before_checklist(c)),
+        # v4.31: 角色铁律嵌入叙事，不再独立检查
         ("6", "包含自检清单", lambda c: "自检清单" in c and ("✅" in c or "☐" in c or "逐项确认" in c)),
         ("7", "操作卡无甩锅措辞", lambda c: _no_buck_passing_in_ops(c)),
-        ("8", "角色铁律在提示词前", lambda c: _iron_law_before_prompts(c)),
+        # v4.31: 角色铁律位置检查不再适用
         ("9", "包含电影级场景描述", lambda c: "电影级场景描述" in c or "场景描述" in c),
         ("10", "包含5段关键帧结构", lambda c: "关键帧1" in c and "关键帧5" in c),
         ("11", "氛围描述占比充足（提示词长度>300字）", lambda c: _xstyle_atmosphere_check(c)),
