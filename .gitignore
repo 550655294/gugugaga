@@ -1,0 +1,18 @@
+# 敏感信息
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+.codebuddy/
+
+# Junk
+$null
+
+# Runtime outputs
+尾帧截图/

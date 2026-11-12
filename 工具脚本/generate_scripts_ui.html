@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>咕咕嘎嘎 — 剧本自动生成器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117; --sidebar:#161b22; --tab:#161b22; --tab-active:#0d1117;
+  --editor:#0d1117; --terminal:#0d1117; --statusbar:#161b22; --border:#30363d;
+  --text:#c9d1d9; --text-dim:#8b949e; --text-light:#e6edf3;
+  --keyword:#79c0ff; --string:#a5d6ff; --comment:#8b949e; --func:#d2a8ff; --var:#ffa657;
+  --green:#3fb950; --yellow:#d2991d; --red:#f85149; --pink:#db61a2;
+}
+body{
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column;
+  overflow:hidden;
+}
+.no-select{user-select:none}
+
+/* ── 标题栏 ── */
+.titlebar{
+  height:32px; background:var(--sidebar); display:flex; align-items:center; padding:0 14px;
+  font-size:12px; color:var(--text-dim); gap:10px; flex-shrink:0;
+  border-bottom:1px solid var(--border);
+}
+.titlebar .win-btn{width:12px;height:12px;border-radius:50%;cursor:pointer}
+.titlebar .win-btn.r{background:#ff5f57}.titlebar .win-btn.y{background:#febc2e}.titlebar .win-btn.g{background:#28c840}
+.titlebar .title{flex:1;text-align:center;font-size:12px;color:var(--text-dim)}
+.titlebar .title .fname{color:var(--text-light)}
+.titlebar .title .sep{color:var(--border);margin:0 6px}
+
+/* ── 主布局 ── */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ── 侧边栏 ── */
+.sidebar{
+  width:260px; background:var(--sidebar); border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+}
+.sidebar-header{
+  padding:10px 14px; font-size:11px; font-weight:600; letter-spacing:0.5px;
+  color:var(--text-light); display:flex; gap:8px; align-items:center;flex-wrap:wrap;
+  border-bottom:1px solid var(--border);
+}
+.sidebar-header .dot{width:7px;height:7px;background:#4ade80;border-radius:50%;box-shadow:0 0 6px #4ade80}
+.file-tree{flex:1;overflow-y:auto;padding:6px 0;font-size:12px}
+.file-tree::-webkit-scrollbar{width:5px}
+.file-tree::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.file-tree::-webkit-scrollbar-thumb:hover{background:var(--border-hover)}
+.file-item{
+  display:flex;align-items:center;gap:8px;padding:4px 14px 4px 22px;
+  cursor:pointer;color:var(--text-dim);transition:all .12s;
+}
+.file-item:hover{background:var(--tab);color:var(--text)}
+.file-item.active{background:rgba(88,166,255,0.08);color:var(--accent);border-left:2px solid var(--accent)}
+.file-item .ficon{font-size:13px;width:16px;text-align:center}
+.file-item .fname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item .fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.file-item .fdot.g{background:#3fb950;box-shadow:0 0 4px #3fb950}.file-item .fdot.y{background:#d2991d;box-shadow:0 0 4px #d2991d}
+
+/* ── 编辑区 ── */
+.editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* 标签栏 */
+.tabs{
+  height:36px; background:var(--tab); display:flex; align-items:stretch;
+  border-bottom:1px solid var(--border); overflow-x:auto; flex-shrink:0;
+}
+.tabs::-webkit-scrollbar{height:2px}
+.tab{
+  display:flex;align-items:center;gap:7px;padding:0 16px;font-size:12px;
+  color:var(--text-dim);border-right:1px solid var(--border);white-space:nowrap;cursor:pointer;
+  transition:all .15s;
+}
+.tab:hover{color:var(--text);background:var(--bg)}
+.tab.active{background:var(--editor);color:var(--text-light);border-top:2px solid var(--keyword)}
+.tab .t-icon{font-size:12px}
+.tab .t-close{font-size:10px;color:#888;margin-left:4px}
+.tab .t-close:hover{color:#fff}
+.tab .t-mod{width:7px;height:7px;border-radius:50%;background:#dcdcaa;flex-shrink:0}
+
+/* 编辑器主体 */
+.editor-body{flex:1;overflow-y:auto;position:relative;background:var(--editor)}
+.editor-body::-webkit-scrollbar{width:8px}
+.editor-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.editor-body::-webkit-scrollbar-thumb:hover{background:var(--border-hover)}
+.editor-lines{
+  display:flex; min-height:100%; counter-reset:line;
+}
+.line-nums{
+  width:50px; flex-shrink:0; padding:4px 0; text-align:right; color:var(--text-dim);
+  font-size:12px; line-height:1.55; background:var(--sidebar); border-right:1px solid var(--border);
+}
+.line-nums span{display:block;padding-right:12px}
+.editor-content{
+  flex:1; padding:6px 0 6px 14px; font-size:13px; line-height:1.55;
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-all;
+}
+.editor-content::-webkit-scrollbar{height:4px}
+.editor-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.editor-content::-webkit-scrollbar-thumb:hover{background:var(--border-hover)}
+
+/* ── 编辑器工具栏 ── */
+.editor-toolbar{
+  height:32px;background:var(--bg);display:flex;align-items:center;padding:0 8px;
+  gap:6px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.tb-btn{
+  display:flex;align-items:center;gap:5px;padding:2px 10px;border-radius:4px;
+  font-size:11px;cursor:pointer;color:var(--text-dim);background:transparent;border:none;
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  transition:all .15s;
+}
+.tb-btn:hover{background:var(--tab);color:var(--text)}
+.tb-btn.run{color:#4ade80}.tb-btn.run:hover{background:rgba(74,222,128,0.1)}
+.tb-btn.stop{color:var(--red)}.tb-btn.stop:hover{background:rgba(248,81,73,0.1)}
+.tb-btn:disabled{color:var(--border);cursor:not-allowed;pointer-events:none}
+.tb-btn .tb-icon{font-size:12px}
+.tb-sep{width:1px;height:16px;background:var(--border);margin:0 4px}
+.tb-hint{font-size:10px;color:var(--text-dim);margin-left:auto}
+.tb-hint.ready{color:var(--green)}
+
+/* ── 模式切换 ── */
+.mode-switch{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.mode-btn{
+  padding:3px 12px;font-size:11px;cursor:pointer;border:none;background:transparent;color:var(--text-dim);
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  transition:all .15s;
+}
+.mode-btn:hover{background:var(--tab);color:var(--text)}
+.mode-btn.active{background:var(--keyword);color:#fff}
+.mode-btn.battle-active{background:var(--pink);color:#fff}
+.mode-btn.xstyle-active{background:var(--green);color:#fff}
+
+/* ── 进度条 ── */
+.progress-bar-wrap{height:3px;background:var(--editor);flex-shrink:0;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#58a6ff,#3fb950,#58a6ff);background-size:200% 100%;transition:width .4s ease}
+.progress-bar-fill.running{animation:shimmer 2s linear infinite}
+.progress-bar-fill.done{background:linear-gradient(90deg,#3fb950,#58a6ff,#3fb950);background-size:200% 100%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:0 0}}
+.progress-info{height:22px;background:var(--editor);display:flex;align-items:center;padding:0 60px 0 10px;font-size:11px;gap:12px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.progress-info .pi-label{color:var(--text-dim)}
+.progress-info .pi-val{color:var(--text);font-weight:600}
+.progress-info .pi-spacer{flex:1}
+.progress-info .pi-pct{color:var(--keyword);font-weight:700;font-size:12px}
+
+/* 语法高亮 */
+.kw{color:var(--keyword)}.str{color:var(--string)}.cm{color:var(--comment)}
+.fn{color:var(--func)}.vr{color:var(--var)}.nm{color:var(--green)}.pk{color:var(--pink)}
+.hl-line{background:rgba(255,255,255,0.03)}
+.cursor{display:inline-block;width:2px;height:16px;background:#fff;animation:blink 1s step-end infinite;vertical-align:text-bottom}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── 终端面板 ── */
+.terminal-panel{
+  height:180px; background:var(--terminal); border-top:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+}
+.terminal-tabs{
+  height:28px; display:flex; align-items:center; padding:0 10px; gap:4px;
+  background:var(--sidebar); border-bottom:1px solid var(--border);
+}
+.terminal-tab{
+  font-size:11px; color:var(--text-dim); padding:3px 12px; cursor:pointer;
+  border-bottom:2px solid transparent;
+}
+.terminal-tab.active{border-bottom-color:var(--keyword);color:var(--text)}
+.terminal-body{
+  flex:1; overflow-y:auto; padding:6px 12px; font-size:12px;
+  font-family:'Cascadia Code','Consolas','Courier New',monospace;
+  line-height:1.6;
+}
+.terminal-body::-webkit-scrollbar{width:5px}
+.terminal-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.terminal-body::-webkit-scrollbar-thumb:hover{background:var(--border-hover)}
+.term-line{padding:1px 0}
+.term-line.e{color:var(--red)}.term-line.s{color:var(--green)}.term-line.w{color:var(--yellow)}.term-line.d{color:var(--text-dim)}
+
+/* ── 状态栏 ── */
+.statusbar{
+  height:26px; background:var(--statusbar); display:flex; align-items:center; padding:0 12px;
+  font-size:11px; color:var(--text); gap:16px; flex-shrink:0;
+  border-top:1px solid var(--border);
+}
+.statusbar .sb-item{display:flex;align-items:center;gap:4px;cursor:pointer}
+.statusbar .sb-spacer{flex:1}
+.statusbar .sb-blinking .dot{width:7px;height:7px;border-radius:50%;animation:blink 1.2s infinite}
+.statusbar .sb-blinking .dot.g{background:#3fb950}.sb-blinking .dot.y{background:#d2991d}.sb-blinking .dot.r{background:#f85149}
+
+/* ── 弹出提示 ── */
+.toast{
+  position:fixed;top:50px;right:20px;background:var(--tab);color:var(--text);padding:10px 20px;
+  border-radius:6px;font-size:12px;box-shadow:0 4px 24px rgba(0,0,0,0.8);z-index:999;
+  opacity:0;transform:translateY(-10px);transition:all 0.3s;pointer-events:none;
+  border-left:3px solid var(--green);
+}
+.toast.on{opacity:1;transform:translateY(0)}
+
+/* ── 可编辑配置 ── */
+.config-edit{display:flex;align-items:center;gap:8px;margin:4px 0}
+.config-edit input{
+  background:var(--bg);border:1px solid var(--border);color:var(--keyword);padding:2px 8px;
+  border-radius:4px;font-size:12px;width:60px;text-align:center;
+  font-family:'Cascadia Code','Consolas',monospace;
+}
+.config-edit input:focus{outline:none;border-color:var(--keyword)}
+.config-edit .save-btn{
+  background:#238636;color:#fff;border:none;padding:2px 10px;border-radius:4px;
+  font-size:11px;cursor:pointer;font-family:'Cascadia Code','Consolas',monospace;
+}
+.config-edit .save-btn:hover{background:#2ea043}
+
+/* ── 需求面板 ── */
+.req-panel{display:flex;flex-direction:column;gap:14px;padding:16px 20px;height:100%;overflow-y:auto}
+.req-panel::-webkit-scrollbar{width:6px}
+.req-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.req-panel::-webkit-scrollbar-thumb:hover{background:var(--border-hover)}
+.req-section{border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.req-section-title{
+  background:var(--sidebar);padding:8px 14px;font-size:12px;font-weight:600;
+  color:var(--keyword);display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);
+}
+.req-section-body{padding:10px 14px;font-size:12px;line-height:1.8}
+.req-tag{
+  display:inline-block;padding:1px 8px;border-radius:10px;font-size:10px;
+  margin:2px 4px 2px 0;
+}
+.req-tag.required{background:#5a1a1a;color:#f44747}
+.req-tag.optional{background:#1a3a2a;color:#4ade80}
+.req-table{width:100%;border-collapse:collapse;font-size:11px}
+.req-table td,.req-table th{padding:4px 10px;border-bottom:1px solid var(--border);text-align:left}
+.req-table th{color:var(--text-dim);font-weight:400}
+.req-table td{color:var(--text)}
+.req-table tr:last-child td{border-bottom:none}
+
+/* ── 文件查看模态 ── */
+.md-viewer-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);
+  z-index:1000;display:flex;align-items:center;justify-content:center;
+}
+.md-viewer{
+  background:var(--editor);border:1px solid var(--border);border-radius:8px;
+  width:85vw;height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.5);
+}
+.md-viewer-header{
+  display:flex;align-items:center;padding:10px 16px;background:var(--sidebar);
+  border-bottom:1px solid var(--border);border-radius:8px 8px 0 0;
+  font-size:13px;color:var(--keyword);gap:8px;
+}
+.md-viewer-header .md-fname{flex:1;color:var(--text-light)}
+.md-viewer-close{
+  cursor:pointer;color:var(--text-dim);font-size:16px;border:none;background:none;padding:0 4px;
+}
+.md-viewer-close:hover{color:var(--text)}
+.md-viewer-body{
+  flex:1;overflow-y:auto;padding:16px 20px;font-size:13px;line-height:1.7;
+  white-space:pre-wrap;word-break:break-word;
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  color:var(--text-light);
+}
+.md-viewer-body::-webkit-scrollbar{width:8px}
+.md-viewer-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.md-viewer-body::-webkit-scrollbar-thumb:hover{background:var(--border-hover)}
+.md-viewer-body{user-select:text!important}
+.md-viewer-body *{user-select:text!important}
+/* 复制按钮 */
+.md-copy-btn{
+  cursor:pointer;color:var(--text-dim);font-size:12px;border:1px solid var(--border);background:transparent;
+  padding:4px 12px;border-radius:4px;margin-right:8px;font-family:inherit;
+}
+.md-copy-btn:hover{background:var(--tab);color:var(--text)}
+/* 排序下拉 */
+.sort-select{
+  background:var(--bg);color:var(--text-dim);border:1px solid var(--border);border-radius:4px;
+  padding:2px 6px;font-size:10px;font-family:inherit;margin-left:auto;
+}
+.sort-select:focus{outline:none;border-color:var(--keyword)}
+/* 刷新按钮 */
+.refresh-btn{
+  cursor:pointer;color:var(--text-dim);background:transparent;border:none;font-size:14px;
+  padding:2px 6px;border-radius:3px;
+}
+.refresh-btn:hover{background:var(--tab);color:var(--text)}
+.refresh-btn.spin{animation:spin 0.8s linear}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* ═══ 流式生成预览 ═══ */
+.stream-view{display:none;flex:1;overflow:hidden;flex-direction:column}
+.stream-view.active{display:flex}
+.stream-header{
+  padding:6px 16px;background:#252526;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.stream-header .s-title{color:#fff;font-size:12px;font-weight:600}
+.stream-header .s-status{font-size:11px;display:flex;align-items:center;gap:5px}
+.stream-header .s-status.live{color:#4ade80}
+.stream-header .s-status.done{color:var(--keyword)}
+.stream-header .s-words{font-size:10px;color:#555;margin-left:auto}
+.stream-body{
+  flex:1;overflow-y:auto;padding:16px 20px;font-size:13px;line-height:1.6;
+  font-family:'Cascadia Code','Consolas','Microsoft YaHei',monospace;
+  color:#c9d1d9;white-space:pre-wrap;word-break:break-word;background:var(--editor);
+  user-select:text!important;
+}
+.stream-body::-webkit-scrollbar{width:8px}
+.stream-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.stream-body::-webkit-scrollbar-thumb:hover{background:var(--border-hover)}
+.stream-cursor{
+  display:inline-block;width:8px;height:15px;background:#4ade80;vertical-align:middle;
+  animation:livePulse 0.8s ease-in-out infinite;border-radius:1px;
+}
+@keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 8px #4ade80}50%{opacity:0.2;box-shadow:0 0 2px #4ade80}}
+.tab.live-tab{border-top-color:#4ade80!important}
+.t-live-dot{
+  width:7px;height:7px;border-radius:50%;background:#4ade80;
+  animation:livePulse 1s ease-in-out infinite;flex-shrink:0;
+}
+</style>
+</head>
+<body>
+
+<!-- 标题栏 -->
+<div class="titlebar no-select">
+  <span class="win-btn r"></span>
+  <span class="win-btn y"></span>
+  <span class="win-btn g"></span>
+  <span class="title">
+    <span class="fname">generate_pipeline.ts</span>
+    <span class="sep">—</span>
+    <span>咕咕嘎嘎项目 — Visual Studio Code [管理员]</span>
+  </span>
+</div>
+
+<!-- 主布局 -->
+<div class="main">
+
+  <!-- 侧边栏 - 文件浏览器 -->
+  <div class="sidebar no-select">
+    <div class="sidebar-header">
+      <span>▸</span>
+      <span>咕咕嘎嘎</span>
+      <span id="sidebarStatus" class="dot" style="background:#d2991d" title="项目状态"></span>
+      <select class="sort-select" id="sortSelect" onchange="applySort()" title="排序方式">
+        <option value="ep-desc">📅 最新集数</option>
+        <option value="ep-asc">📅 最早集数</option>
+        <option value="name-asc">🔤 名称 A-Z</option>
+        <option value="name-desc">🔤 名称 Z-A</option>
+      </select>
+      <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()" title="刷新文件列表">🔄</button>
+    </div>
+    <div class="file-tree" id="fileTree"></div>
+  </div>
+
+  <!-- 编辑区 -->
+  <div class="editor-area">
+    <!-- 标签栏 -->
+    <div class="tabs no-select">
+      <div class="tab active" id="tabMain">
+        <span class="t-icon">📄</span>
+        <span>generate_pipeline.ts</span>
+        <span class="t-mod" id="tabMod" style="background:transparent"></span>
+        <span class="t-close">✕</span>
+      </div>
+      <div class="tab" id="tabStream" style="display:none">
+        <span class="t-icon">📝</span>
+        <span>生成预览</span>
+        <span class="t-live-dot" id="liveDot"></span>
+        <span class="t-close">✕</span>
+      </div>
+      <div class="tab" id="tabConfig">
+        <span class="t-icon">⚙</span>
+        <span>pipeline.config.ts</span>
+      </div>
+      <div class="tab" id="tabReqs">
+        <span class="t-icon">📋</span>
+        <span>pipeline.requirements.ts</span>
+      </div>
+</div>
+    <!-- 编辑器工具栏 -->
+    <div class="editor-toolbar no-select">
+      <!-- 模式切换 -->
+      <div class="mode-switch" id="modeSwitch">
+        <button class="mode-btn active" id="modeNormal" onclick="switchMode('normal')" title="普通分镜脚本生成">
+          🐧 普通分镜
+        </button>
+        <button class="mode-btn" id="modeBattle" onclick="switchMode('battle')" title="战斗分镜脚本生成">
+          ⚔️ 战斗分镜
+        </button>
+        <button class="mode-btn" id="modeXstyle" onclick="switchMode('xstyle')" title="X/Twitter风格电影级视频脚本">
+          🅧 X风格
+        </button>
+      </div>
+      <span class="tb-sep"></span>
+      <button class="tb-btn run" id="tbRun" onclick="startGen()" title="运行流水线 (Ctrl+R)">
+        <span class="tb-icon">▶</span> Run Pipeline
+      </button>
+      <button class="tb-btn stop" id="tbStop" onclick="stopGen()" disabled title="停止 (Ctrl+C)">
+        <span class="tb-icon">■</span> Stop
+      </button>
+      <span class="tb-sep"></span>
+      <span class="tb-hint ready" id="tbHint">⬆ 点击 Run Pipeline 开始</span>
+    </div>
+    <!-- 进度条 -->
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progBar" style="width:0%"></div></div>
+    <div class="progress-info no-select" id="progInfo">
+      <span class="pi-item"><span class="pi-label">Build</span><span class="pi-val" id="piStatus">IDLE</span></span>
+      <span class="pi-item"><span class="pi-label">Episodes</span><span class="pi-val" id="piEps">0</span></span>
+      <span class="pi-item"><span class="pi-label">Errors</span><span class="pi-val" id="piErrs">0</span></span>
+      <span class="pi-item"><span class="pi-label">✘Failed</span><span class="pi-val" id="piFailed" style="color:var(--yellow)">0</span></span>
+      <span class="pi-spacer"></span>
+      <span class="pi-item"><span class="pi-label">Time</span><span class="pi-val" id="piTime">30:00</span></span>
+      <span class="pi-item"><span class="pi-pct" id="piPct">0%</span></span>
+    </div>
+
+    <!-- 编辑器主体 -->
+    <div class="editor-body" id="editorBody">
+      <div class="editor-lines">
+        <div class="line-nums" id="lineNums"></div>
+        <div class="editor-content" id="editorContent"></div>
+      </div>
+      <!-- 流式生成预览 -->
+      <div class="stream-view" id="streamView">
+        <div class="stream-header">
+          <span>📝</span>
+          <span class="s-title" id="sTitle">等待生成...</span>
+          <span class="s-status live" id="sStatus"><span>●</span> 生成中</span>
+          <span class="s-words" id="sWords">0字</span>
+        </div>
+        <div class="stream-body" id="streamBody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 终端面板 -->
+<div class="terminal-panel">
+  <div class="terminal-tabs no-select">
+    <span class="terminal-tab active">📟 输出</span>
+    <span class="terminal-tab">🔍 问题</span>
+    <span class="terminal-tab">🐛 调试控制台</span>
+  </div>
+  <div class="terminal-body" id="terminalBody"></div>
+</div>
+
+<!-- 状态栏 -->
+<div class="statusbar no-select">
+  <span class="sb-item sb-blinking" id="sbStatus">
+    <span class="dot" style="background:#d2991d"></span>
+    <span>IDLE</span>
+  </span>
+  <span class="sb-item" id="sbEpisode">📄 待机中</span>
+  <span class="sb-item" id="sbFailed"></span>
+  <span class="sb-spacer"></span>
+  <span class="sb-item" id="sbTimer">⏱ 30:00</span>
+  <span class="sb-item">🐧 TypeScript 5.4</span>
+  <span class="sb-item">UTF-8</span>
+  <span class="sb-item">行 1，列 1</span>
+</div>
+
+<!-- Toast提示 -->
+<div class="toast" id="toast">✅ 编译成功</div>
+
+<!-- MD 文件查看器 -->
+<div class="md-viewer-overlay" id="mdOverlay" style="display:none">
+  <div class="md-viewer">
+    <div class="md-viewer-header">
+      <span>📄</span>
+      <span class="md-fname" id="mdFname">文件.md</span>
+      <button class="md-copy-btn" id="mdTrimBtn" onclick="toggleTrimView()" title="精简视图：只显示提示词+操作卡">📋 精简视图</button>
+      <button class="md-copy-btn" onclick="copyMdContent()" title="复制当前视图内容">📄 复制</button>
+      <button class="md-viewer-close" onclick="closeMdViewer()">✕</button>
+    </div>
+    <div class="md-viewer-body" id="mdBody">加载中...</div>
+  </div>
+</div>
+
+<script>
+// ═══ 状态 ═══
+let pollTimer = null;
+let wasRunning = false;
+let lineCount = 38;
+let isConfigTab = false;
+let totalDurationSec = 30*60;
+let rawFiles = [];  // 保存原始文件列表用于排序
+let lastFileCount = 0;  // 记录上次文件数，检测是否有新文件
+let streamActive = false;  // 当前是否在流式输出
+let streamEp = 0;  // 当前流式输出的集数
+let streamLastLen = 0;  // 上次流式内容长度
+let mdFullContent = '';  // MD查看器完整内容
+let mdTrimmed = true;    // 是否精简视图（默认开启）
+let currentMode = 'normal';  // 'normal' | 'battle' | 'xstyle'
+
+const MODE_CFG = {
+  normal: {
+    epRegex: /脚本(\d+)[_第]/, dirLabel: 'output/', fileIcon: '🎬', prefix: '脚本',
+    apiStatus: '/api/status', apiFile: '/api/file', apiStart: '/api/start', apiStop: '/api/stop',
+    psScript: 'start_generator.ps1', displayName: '🐧 普通分镜', modeCss: 'active',
+    btnIcon: '▶', btnLabel: 'Run Pipeline', toastLabel: '', liveLabel: '脚本',
+  },
+  battle: {
+    epRegex: /战斗(\d+)_/, dirLabel: 'output/battle/', fileIcon: '⚔️', prefix: '战斗',
+    apiStatus: '/api/battle/status', apiFile: '/api/battle/file', apiStart: '/api/battle/start', apiStop: '/api/battle/stop',
+    psScript: 'start_battle.ps1', displayName: '⚔️ 战斗分镜', modeCss: 'battle-active',
+    btnIcon: '⚔️', btnLabel: 'Run Battle Pipeline', toastLabel: '战斗', liveLabel: '战斗',
+  },
+  xstyle: {
+    epRegex: /X风格(\d+)_/, dirLabel: 'output/xstyle/', fileIcon: '🎥', prefix: 'X风格',
+    apiStatus: '/api/xstyle/status', apiFile: '/api/xstyle/file', apiStart: '/api/xstyle/start', apiStop: '/api/xstyle/stop',
+    psScript: 'start_xstyle.ps1', displayName: '🅧 X风格', modeCss: 'xstyle-active',
+    btnIcon: '🅧', btnLabel: 'Run X Pipeline', toastLabel: 'X风格', liveLabel: 'X风格',
+  }
+};
+function cfg(){ return MODE_CFG[currentMode]; }
+
+// ═══ 排序函数 ═══
+function sortFiles(files, sortMode){
+  let sorted = [...files];
+  let epRegex = cfg().epRegex;
+  switch(sortMode){
+    case 'ep-asc':
+      sorted.sort((a,b)=>{
+        let na=parseInt((a.name.match(epRegex)||['','0'])[1])||0;
+        let nb=parseInt((b.name.match(epRegex)||['','0'])[1])||0;
+        return na-nb;
+      });
+      break;
+    case 'name-asc':
+      sorted.sort((a,b)=>a.name.localeCompare(b.name,'zh'));
+      break;
+    case 'name-desc':
+      sorted.sort((a,b)=>b.name.localeCompare(a.name,'zh'));
+      break;
+    case 'ep-desc':
+    default:
+      sorted.sort((a,b)=>{
+        let na=parseInt((a.name.match(epRegex)||['','0'])[1])||0;
+        let nb=parseInt((b.name.match(epRegex)||['','0'])[1])||0;
+        return nb-na;
+      });
+      break;
+  }
+  return sorted;
+}
+
+// ═══ 流式预览更新 ═══
+function updateStreamView(d){
+  let sv=document.getElementById('streamView');
+  let tab=document.getElementById('tabStream');
+  let body=document.getElementById('streamBody');
+  let sTitle=document.getElementById('sTitle');
+  let sStatus=document.getElementById('sStatus');
+  let sWords=document.getElementById('sWords');
+  let liveDot=document.getElementById('liveDot');
+  
+  if(d.streaming && d.stream_content){
+    // 流式生成中
+    if(!streamActive){
+      streamActive=true; streamLastLen=0;
+      sv.classList.add('active');
+      tab.style.display='flex';
+      if(!isConfigTab) showStreamTab();
+      document.getElementById('editorContent').parentElement.style.display='none';
+    }
+    let content=d.stream_content;
+    streamEp=d.stream_ep||0;
+    sTitle.textContent=`第${streamEp}集 · 生成中`;
+    sStatus.innerHTML='<span>●</span> 生成中'; sStatus.className='s-status live';
+    sWords.textContent=content.length+'字';
+    body.textContent=content;
+    body.scrollTop=body.scrollHeight;  // 自动滚到底部
+    // 追加闪烁光标
+    if(!body.querySelector('.stream-cursor')){
+      let cur=document.createElement('span'); cur.className='stream-cursor';
+      body.appendChild(cur);
+      // 闪烁光标放到末尾
+      let r=document.createRange(); r.selectNode(cur); r.collapse(false);
+      let sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    }
+    streamLastLen=content.length;
+  } else if(streamActive && !d.streaming){
+    // 流式结束
+    streamActive=false;
+    sStatus.innerHTML='<span>✓</span> 完成'; sStatus.className='s-status done';
+    sTitle.textContent=`第${streamEp}集 · 已保存`;
+    liveDot.style.display='none';
+    tab.classList.remove('live-tab');
+    // 移除光标
+    let cur=body.querySelector('.stream-cursor');
+    if(cur) cur.remove();
+    // 不自动切回，让用户可以继续看生成结果
+    // 但恢复主标签页可点击
+  }
+}
+
+function showStreamTab(){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active','live-tab'));
+  document.getElementById('tabStream').classList.add('active','live-tab');
+}
+
+// ═══ 文件树更新 ═══
+function updateFileTree(files){
+  rawFiles = files || [];  // 保存原始数据
+  // 检测新文件（跳过首次加载）
+  if(lastFileCount > 0 && rawFiles.length > lastFileCount){
+    let newCount = rawFiles.length - lastFileCount;
+    showToast(`🆕 新增 ${newCount} 集${cfg().toastLabel}！共 ${rawFiles.length} 集`);
+  }
+  lastFileCount = rawFiles.length;
+
+  let sortMode = document.getElementById('sortSelect')?.value || 'ep-desc';
+  let sorted = sortFiles(rawFiles, sortMode);
+
+  let html = '';
+  html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ src/</div>`;
+  html += `<div class="file-item"><span class="ficon">📄</span><span class="fname">generate_pipeline.ts</span></div>`;
+  html += `<div class="file-item"><span class="ficon">⚙</span><span class="fname">pipeline.config.ts</span></div>`;
+  html += `<div class="file-item"><span class="ficon">📦</span><span class="fname">types.d.ts</span></div>`;
+
+  if(currentMode === 'battle'){
+    html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ output/battle/ <span style="font-size:10px;color:#666">(${sorted.length}集)</span></div>`;
+  } else if(currentMode === 'xstyle'){
+    html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ output/xstyle/ <span style="font-size:10px;color:#666">(${sorted.length}集)</span></div>`;
+  } else {
+    html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ output/ <span style="font-size:10px;color:#666">(${sorted.length}集)</span></div>`;
+  }
+
+  if(sorted.length > 0){
+    for(let f of sorted){
+      let epNum = '';
+      let match = f.name.match(cfg().epRegex);
+      epNum = match ? match[1] : '';
+      html += `<div class="file-item" onclick="viewMdFile('${he(f.name)}')" title="${cfg().prefix}${epNum} · 点击查看"><span class="ficon">${cfg().fileIcon}</span><span class="fname">${he(f.name)}</span><span class="fdot g"></span></div>`;
+    }
+  } else {
+    html += `<div class="file-item"><span class="ficon">📭</span><span class="fname" style="color:#888">(empty)</span></div>`;
+  }
+  html += `<div style="padding:2px 12px;color:#888;font-size:11px;letter-spacing:1px">▼ scripts/</div>`;
+  html += `<div class="file-item"><span class="ficon">🔧</span><span class="fname">start_generator.ps1</span></div>`;
+  document.getElementById('fileTree').innerHTML = html;
+}
+
+// ═══ 排序切换 ═══
+function applySort(){
+  updateFileTree(rawFiles);
+}
+
+// ═══ 手动刷新文件列表 ═══
+function manualRefresh(){
+  let btn = document.getElementById('refreshBtn');
+  btn.classList.add('spin');
+  let url = cfg().apiStatus;
+  fetch(url).then(r=>r.json()).then(d=>{
+    updateFileTree(d.files||[]);
+    showToast('🔄 文件列表已刷新');
+  }).catch(e=>{
+    showToast('❌ 刷新失败，请确认服务器已启动');
+  }).finally(()=>{
+    setTimeout(()=>btn.classList.remove('spin'), 300);
+  });
+}
+
+// ═══ 复制 MD 内容 ═══
+function copyMdContent(){
+  let body = document.getElementById('mdBody');
+  let text = body.textContent || body.innerText || '';
+  if(!text.trim()){ showToast('⚠️ 没有可复制的内容'); return; }
+  navigator.clipboard.writeText(text).then(()=>{
+    showToast('✅ 已复制到剪贴板！');
+  }).catch(()=>{
+    // 兜底方案：用 textarea
+    let ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.left='-9999px';
+    document.body.appendChild(ta); ta.select();
+    try{document.execCommand('copy'); showToast('✅ 已复制到剪贴板！')}
+    catch(e2){showToast('❌ 复制失败，请手动选择复制')}
+    finally{document.body.removeChild(ta)}
+  });
+}
+
+// ═══ 编辑器内容（伪装成 TypeScript 管道代码） ═══
+function buildEditorContent(d){
+  let lines = [];
+  let kw='kw',str='str',cm='cm',fn='fn',vr='vr',nm='nm',pk='pk';
+
+  lines.push(`<span class="${cm}">/**</span>`);
+  lines.push(`<span class="${cm}"> * 咕咕嘎嘎 剧本自动生成流水线</span>`);
+  lines.push(`<span class="${cm}"> * DeepSeek AI · Seedance 2.0 · 30min runtime</span>`);
+  lines.push(`<span class="${cm}"> * @see pipeline.config.ts</span>`);
+  lines.push(`<span class="${cm}"> */</span>`);
+  lines.push(``);
+  lines.push(`<span class="${kw}">import</span> { DeepSeekAPI } <span class="${kw}">from</span> <span class="${str}">'@ai/deepseek'</span>;`);
+  lines.push(`<span class="${kw}">import</span> { Pipeline, ScriptGen } <span class="${kw}">from</span> <span class="${str}">'./types'</span>;`);
+  lines.push(`<span class="${kw}">import</span> { config } <span class="${kw}">from</span> <span class="${str}">'./pipeline.config'</span>;`);
+  lines.push(``);
+  lines.push(`<span class="${kw}">class</span> <span class="${fn}">GuguScriptPipeline</span> <span class="${kw}">implements</span> Pipeline {`);
+  lines.push(`  <span class="${kw}">private</span> api: DeepSeekAPI;`);
+  lines.push(`  <span class="${kw}">private</span> episodeIndex: <span class="${nm}">number</span>;`);
+  lines.push(`  <span class="${kw}">private</span> generated: <span class="${nm}">number</span> = ${d.total||0};`);
+  lines.push(`  <span class="${kw}">private</span> errors: <span class="${nm}">number</span> = ${d.errors||0};`);
+  lines.push(`  <span class="${kw}">private</span> failed: <span class="${nm}">number</span> = ${d.failed_count||0};  <span class="${cm}">// 校验失败次数</span>`);
+  lines.push(``);
+  lines.push(`  <span class="${fn}">constructor</span>() {`);
+  lines.push(`    <span class="${kw}">this</span>.<span class="${vr}">api</span> = <span class="${kw}">new</span> DeepSeekAPI({`);
+  lines.push(`      model: <span class="${str}">'deepseek-chat'</span>,`);
+  lines.push(`      maxTokens: <span class="${nm}">16000</span>,`);
+  lines.push(`      temperature: <span class="${nm}">0.8</span>,`);
+  lines.push(`    });`);
+  lines.push(`    <span class="${kw}">this</span>.<span class="${vr}">episodeIndex</span> = <span class="${kw}">this</span>.<span class="${fn}">detectNextEpisode</span>();`);
+  lines.push(`  }`);
+  lines.push(``);
+
+  // 动态部分 - 当前状态
+  let statusText = d.running ? 'RUNNING' : (d.completed ? 'COMPLETED' : 'IDLE');
+  let statusColor = d.running ? nm : (d.completed ? 'str' : pk);
+  lines.push(`  <span class="${kw}">get</span> <span class="${fn}">status</span>(): <span class="${nm}">string</span> {`);
+  lines.push(`    <span class="${kw}">return</span> <span class="${statusColor}">'${statusText}'</span>;  <span class="${cm}">// ← 当前状态</span>`);
+  lines.push(`  }`);
+  lines.push(``);
+  // 进度计算（必须在ASCII art之前声明，否则pct处于TDZ死区）
+  let rem = d.remaining || totalDurationSec;
+  let totalSec = totalDurationSec, pct = d.running ? ((totalSec-rem)/totalSec*100) : 0;
+  pct = Math.min(100, Math.max(0, pct));
+  // 进度指示条(ASCII art)
+  let barLen=20, bfilled=Math.round(pct/100*barLen);
+  let bStr="█".repeat(bfilled)+"░".repeat(barLen-bfilled);
+  lines.push(`  <span class="${cm}">// ╔════════════════════════╗</span>`);
+  lines.push(`  <span class="${cm}">// ║ ${bStr} ║  ${pct.toFixed(0)}%</span>`);
+  lines.push(`  <span class="${cm}">// ╚════════════════════════╝</span>`);
+  lines.push(``);
+
+  let curEp = d.current || '等待启动...';
+  lines.push(`  <span class="${fn}">getCurrentTask</span>(): <span class="${nm}">string</span> {`);
+  lines.push(`    <span class="${kw}">return</span> <span class="${str}">'${curEp}'</span>;`);
+  lines.push(`  }`);
+  lines.push(``);
+
+  rem = d.remaining || totalDurationSec;
+  let mm = Math.floor(rem/60), ss = rem%60;
+  lines.push(`  <span class="${fn}">getRemainingTime</span>(): <span class="${nm}">string</span> {`);
+  lines.push(`    <span class="${kw}">return</span> <span class="${str}">'${mm}:${String(ss).padStart(2,'0')}'</span>;`);
+  lines.push(`  }`);
+  lines.push(``);
+
+  // 处理方法
+  lines.push(`  <span class="${kw}">async</span> <span class="${fn}">generate</span>(episode: <span class="${nm}">number</span>): <span class="${kw}">Promise</span>&lt;ScriptGen&gt; {`);
+  lines.push(`    <span class="${kw}">const</span> prompt = <span class="${kw}">this</span>.<span class="${fn}">buildSystemPrompt</span>();`);
+  lines.push(`    <span class="${kw}">const</span> response = <span class="${kw}">await</span> <span class="${kw}">this</span>.<span class="${vr}">api</span>.<span class="${fn}">chat</span>({`);
+  lines.push(`      system: prompt,`);
+  lines.push(`      user: <span class="${str}">\`创作第\${episode}集，双段独立 12-15s×2 格式\`</span>,`);
+  lines.push(`    });`);
+  lines.push(`    <span class="${kw}">return</span> <span class="${kw}">this</span>.<span class="${fn}">parseAndSave</span>(response);`);
+  lines.push(`  }`);
+  lines.push(``);
+
+  // 进度条伪装成循环
+  lines.push(`  <span class="${cm}">// Pipeline progress: ${pct.toFixed(1)}% ████████████████████</span>`);
+
+  lines.push(`}`);
+  lines.push(``);
+  lines.push(`<span class="${kw}">export</span> <span class="${kw}">default</span> <span class="${kw}">new</span> <span class="${fn}">GuguScriptPipeline</span>();`);
+
+  // 行号
+  let numHtml = '';
+  for(let i=1;i<=lines.length;i++) numHtml += `<span>${i}</span>`;
+
+  document.getElementById('lineNums').innerHTML = numHtml;
+  document.getElementById('editorContent').innerHTML = lines.join('\n');
+  lineCount = lines.length;
+
+  // 标签页圆点
+  let dot = document.getElementById('tabMod');
+  if(d.running) dot.style.background = '#3fb950';
+  else if(d.completed) dot.style.background = '#58a6ff';
+  else dot.style.background = 'transparent';
+}
+
+// ── 进度条更新 ──
+function updateProgress(d){
+  let bar=document.getElementById("progBar");
+  let totalSec=totalDurationSec, rem=d.remaining||totalDurationSec, pct=0;
+  if(d.running) pct=Math.min(100,Math.max(0,(totalSec-rem)/totalSec*100));
+  else if(d.completed) pct=100;
+  bar.style.width=pct+"%";
+  bar.classList.remove("running","done");
+  if(d.running) bar.classList.add("running");
+  else if(d.completed) bar.classList.add("done");
+  let mm=Math.floor(rem/60), ss=rem%60;
+  document.getElementById("piStatus").textContent=d.running?"Building...":(d.completed?"SUCCESS":"IDLE");
+  document.getElementById("piEps").textContent=d.total||0;
+  document.getElementById("piErrs").textContent=d.errors||0;
+  document.getElementById("piFailed").textContent=d.failed_count||0;
+  document.getElementById("piTime").textContent=mm+":"+String(ss).padStart(2,"0");
+  document.getElementById("piPct").textContent=pct.toFixed(0)+"%";
+  // toolbar button states
+  let tbRun=document.getElementById("tbRun"), tbStop=document.getElementById("tbStop"), tbHint=document.getElementById("tbHint");
+  if(d.running){tbRun.disabled=true;tbStop.disabled=false;tbHint.textContent="🔵 生成中... Ctrl+C 停止";tbHint.className='tb-hint';}
+  else{tbRun.disabled=false;tbStop.disabled=true;tbHint.textContent=d.completed?"✅ Build complete!":"⬆ Ctrl+R 开始";tbHint.className='tb-hint'+(d.completed?'':' ready');}
+}
+
+// ═══ 终端输出 ═══
+function updateTerminal(logs, currentTask){
+  let html = '';
+  let psPrefix = cfg().psScript;
+  html += `<div class="term-line d">PS E:\\咕咕嘎嘎&gt; ${psPrefix}</div>`;
+  html += `<div class="term-line d">[INFO] 初始化 DeepSeek API 连接... OK</div>`;
+  html += `<div class="term-line d">[INFO] 加载共享参数模板... OK</div>`;
+  html += `<div class="term-line d">[INFO] 加载提示词规范... OK</div>`;
+  html += `<div class="term-line d">[INFO] 工作目录: E:\\咕咕嘎嘎\\</div>`;
+  html += `<div class="term-line d">[INFO] 模式: ${cfg().displayName}</div>`;
+
+  if(logs && logs.length > 0){
+    for(let l of logs.slice(-25)){
+      let c='term-line d';
+      if(l.includes('❌')||l.includes('失败')||l.includes('💥')) c='term-line e';
+      else if(l.includes('✅')||l.includes('💾')||l.includes('🎉')||l.includes('🏁')||l.includes('校验通过')) c='term-line s';
+      else if(l.includes('⚠️')||l.includes('校验未通过')||l.includes('重试')) c='term-line w';
+      else if(l.includes('🤖')||l.includes('📝')||l.includes('🚀')||l.includes('⏰')||l.includes('⚔️')||l.includes('流式')) c='term-line w';
+      html += `<div class="${c}">${he(l)}</div>`;
+    }
+  }else{
+    html += `<div class="term-line d">PS E:\\咕咕嘎嘎&gt; <span class="cursor"></span></div>`;
+  }
+
+  let tb = document.getElementById('terminalBody');
+  tb.innerHTML = html;
+  tb.scrollTop = tb.scrollHeight;
+}
+
+// ═══ 状态栏 ═══
+function updateStatusBar(d){
+  let sbStatus = document.getElementById('sbStatus');
+  let dot = sbStatus.querySelector('.dot');
+  let label = sbStatus.querySelector('span:last-child');
+
+  if(d.running){
+    dot.style.background = '#3fb950'; label.textContent = 'RUNNING';
+  } else if(d.completed){
+    dot.style.background = '#58a6ff'; label.textContent = 'DONE';
+  } else {
+    dot.style.background = '#d2991d'; label.textContent = 'IDLE';
+  }
+
+  document.getElementById('sbEpisode').innerHTML = `📄 ${d.current||'待机中'}`;
+  let rem = d.remaining||totalDurationSec;
+  document.getElementById('sbTimer').innerHTML = `⏱ ${Math.floor(rem/60)}:${String(rem%60).padStart(2,'0')}`;
+  // 校验错误指示
+  let sbFailed = document.getElementById('sbFailed');
+  if(d.validation_errors && d.validation_errors.length > 0){
+    sbFailed.innerHTML = '⚠️ 校验:'+d.validation_errors.join(',');
+    sbFailed.style.color='var(--yellow)';
+  } else if(d.failed_count && d.failed_count > 0){
+    sbFailed.innerHTML = '✘ 失败:'+d.failed_count+'次';
+    sbFailed.style.color='var(--red)';
+  } else {
+    sbFailed.innerHTML = '';
+  }
+
+  // 侧边栏圆点
+  let sd = document.getElementById('sidebarStatus');
+  if(d.running) sd.style.background = '#3fb950';
+  else if(d.completed) sd.style.background = '#58a6ff';
+  else sd.style.background = '#d2991d';
+}
+
+// ═══ Toast ═══
+function showToast(msg){
+  let t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'), 2500);
+}
+
+// ═══ 轮询 ═══
+async function poll(){
+  try{
+    let statusUrl = cfg().apiStatus;
+    let r = await fetch(statusUrl);
+    let d = await r.json();
+    if(d.duration_min) totalDurationSec=d.duration_min*60;
+    updateFileTree(d.files||[]);
+    if(!isConfigTab) buildEditorContent(d);
+    updateProgress(d);
+    updateTerminal(d.logs||[], d.current||'');
+    updateStatusBar(d);
+    updateStreamView(d);  // ← 实时流式预览
+
+    if(d.completed && wasRunning){
+      showToast(`✅ 流水线完成！共生成了 ${d.total} 集${cfg().toastLabel}剧本`);
+    }
+    wasRunning = d.running;
+  }catch(e){console.error(e)}
+}
+
+function he(s){
+  let d=document.createElement('div'); d.textContent=s; return d.innerHTML;
+}
+
+// ═══ 模式切换 ═══
+function switchMode(mode){
+  if(currentMode === mode) return;
+  currentMode = mode;
+  
+  // 更新按钮样式
+  document.getElementById('modeNormal').className = 'mode-btn';
+  document.getElementById('modeBattle').className = 'mode-btn';
+  document.getElementById('modeXstyle').className = 'mode-btn';
+  
+  if(mode === 'normal'){
+    document.getElementById('modeNormal').className = 'mode-btn active';
+  } else if(mode === 'battle'){
+    document.getElementById('modeBattle').className = 'mode-btn battle-active';
+  } else if(mode === 'xstyle'){
+    document.getElementById('modeXstyle').className = 'mode-btn xstyle-active';
+  }
+  
+  // 更新 Run 按钮
+  document.getElementById('tbRun').innerHTML = '<span class="tb-icon">'+cfg().btnIcon+'</span> '+cfg().btnLabel;
+  
+  // 重置状态
+  lastFileCount = 0;
+  wasRunning = false;
+  
+  // 立即刷新
+  poll();
+  showToast(cfg().fileIcon+' 已切换到'+cfg().displayName+'模式');
+}
+
+// ═══ 精简视图：只保留提示词+操作卡 ═══
+function trimToActionableView(content){
+  // 按优先级查找起始章节
+  let markers = [
+    '## 📋 第二场景生成操作卡',
+    '## 🎯 即梦生成参数',
+    '## 中文提示词（即梦 Seedance 2.0）',
+    '## 中文提示词',
+  ];
+  let bestIdx = content.length;
+  let bestMarker = '';
+  for(let m of markers){
+    let idx = content.indexOf(m);
+    if(idx !== -1 && idx < bestIdx){
+      bestIdx = idx;
+      bestMarker = m;
+    }
+  }
+  if(!bestMarker) return content; // 兜底：显示全部
+  
+  let header = '> ⚡ 精简视图：已隐藏分镜详情，仅显示即梦提交所需的提示词和操作清单\n\n---\n\n';
+  return header + content.substring(bestIdx);
+}
+
+function toggleTrimView(){
+  mdTrimmed = !mdTrimmed;
+  let body = document.getElementById('mdBody');
+  let btn = document.getElementById('mdTrimBtn');
+  if(mdTrimmed){
+    body.textContent = trimToActionableView(mdFullContent);
+    btn.textContent = '📋 精简视图';
+    btn.title = '当前：精简视图（仅提示词+操作卡）点击切换完整视图';
+    showToast('📋 已切换为精简视图');
+  } else {
+    body.textContent = mdFullContent;
+    btn.textContent = '📖 完整视图';
+    btn.title = '当前：完整视图。点击切换精简视图';
+    showToast('📖 已切换为完整视图');
+  }
+  body.scrollTop = 0;
+}
+
+// ═══ MD文件查看器 ═══
+async function viewMdFile(name){
+  let overlay=document.getElementById('mdOverlay');
+  let body=document.getElementById('mdBody');
+  document.getElementById('mdFname').textContent=name;
+  overlay.style.display='flex';
+  body.textContent='加载中...';
+  try{
+    let fileUrl = cfg().apiFile;
+    let r=await fetch(fileUrl+encodeURIComponent(name));
+    let d=await r.json();
+    if(d.content){
+      mdFullContent = d.content;
+      mdTrimmed = true; // 默认打开精简视图
+      body.textContent = trimToActionableView(mdFullContent);
+      document.getElementById('mdTrimBtn').textContent = '📋 精简视图';
+    }
+    else body.textContent='⚠️ 文件内容为空';
+  }catch(e){
+    body.textContent='❌ 无法加载文件: '+e.message;
+  }
+}
+function closeMdViewer(){
+  document.getElementById('mdOverlay').style.display='none';
+}
+// 点击遮罩关闭 + ESC 关闭
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('mdOverlay').addEventListener('click',function(e){
+    if(e.target===this) closeMdViewer();
+  });
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    let overlay=document.getElementById('mdOverlay');
+    if(overlay.style.display==='flex') closeMdViewer();
+  }
+});
+
+// ═══ 需求视图 ═══
+function buildReqsView(){
+  let html=`<div class="req-panel">`;
+
+  // 整体说明
+  html+=`<div class="req-section">
+    <div class="req-section-title">📋 脚本生成条件总览</div>
+    <div class="req-section-body">
+      每集剧本由 DeepSeek AI 自动生成，包含 <b>双段独立 12-15s×2</b> 格式的完整分镜脚本。<br>
+      输出包含中英文 Seedance 2.0 提示词，可直接导入即梦进行视频生成。<br>
+      <span style="color:#888;font-size:11px">⚠️ 启动前请确认以下素材已就绪</span>
+    </div>
+  </div>`;
+
+  // 必需素材
+  html+=`<div class="req-section">
+    <div class="req-section-title">🔴 必需素材（缺少则无法生成）</div>
+    <div class="req-section-body">
+      <table class="req-table">
+        <tr><th>素材</th><th>说明</th><th>用途</th></tr>
+        <tr><td><span class="req-tag required">必需</span> 共享参数模板.md</td><td>角色设定、世界观、场景风格描述</td><td>构建 System Prompt</td></tr>
+        <tr><td><span class="req-tag required">必需</span> Seedance2.0 提示词规范</td><td>即梦 Seedance 2.0 提示词格式规范</td><td>格式校验 & 参考</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 角色参考图</td><td>企鹅妹妹角色设定图（即梦角色参考）</td><td>图生视频时作为角色锚点</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // 第一场景
+  html+=`<div class="req-section">
+    <div class="req-section-title">🎬 第一场景（0-12s）</div>
+    <div class="req-section-body">
+      <table class="req-table">
+        <tr><th>条件</th><th>详情</th></tr>
+        <tr><td>场景设定</td><td>剧本描述的第一个场景（如厨房、客厅、户外等）</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 背景参考</td><td>与场景匹配的背景参考图（可选多角度，最多9张）</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 角色锚点</td><td>上传角色参考图至即梦「全能参考」</td></tr>
+        <tr><td>生成参数</td><td>9:16 | 15s | 图生视频 | 中文+英文提示词</td></tr>
+        <tr><td>提示词格式</td><td>日系萌圆暖柔handheld + 150-250字场景描述 + 4K quality</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // 场景素材流转图 ⭐
+  html+=`<div class="req-section" style="border-color:var(--green)">
+    <div class="req-section-title">🔗 场景素材流转图（首尾帧依赖）</div>
+    <div class="req-section-body">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;font-size:11px">
+        <div style="background:#1a3a2a;padding:8px 12px;border-radius:4px;text-align:center">
+          <div style="color:#4ade80;font-weight:700">🎬 第一场景</div>
+          <div style="color:#888;margin-top:4px">15s 生成</div>
+          <div style="color:#888">输入：角色参考图</br>+ 场景1背景参考</div>
+        </div>
+        <div style="color:var(--green);font-size:20px">➜</div>
+        <div style="background:#2a2a2a;padding:8px 12px;border-radius:4px;text-align:center;border:1px dashed var(--keyword)">
+          <div style="color:var(--keyword);font-weight:700">📸 第一场景尾帧</div>
+          <div style="color:#f44747;margin-top:4px"><span class="req-tag required">必须提取</span></div>
+          <div style="color:#888;font-size:10px;margin-top:4px">作为第二场景</br>首帧参考图</div>
+        </div>
+        <div style="color:var(--green);font-size:20px">➜</div>
+        <div style="background:#1a3a2a;padding:8px 12px;border-radius:4px;text-align:center">
+          <div style="color:#4ade80;font-weight:700">🎬 第二场景</div>
+          <div style="color:#888;margin-top:4px">15s 生成</div>
+          <div style="color:#888">输入：上一场景尾帧</br>+ 新场景背景参考</div>
+        </div>
+      </div>
+      <div style="color:#888;font-size:10px;margin-top:8px;padding:6px 10px;background:#1a1a1a;border-radius:4px">
+        💡 即梦 Seedance 2.0「首尾帧控制」模式：在上传参考图时，将第一场景的最后一帧截图作为第二场景的<b>首帧参考</b>上传，可确保两个场景之间画面连贯无跳变。
+      </div>
+    </div>
+  </div>`;
+
+  // 第二场景 ⭐
+  html+=`<div class="req-section" style="border-color:var(--keyword)">
+    <div class="req-section-title">🎬 第二场景（12-24s）⚠️ 素材依赖标注</div>
+    <div class="req-section-body">
+      <table class="req-table">
+        <tr><th>条件</th><th>详情</th></tr>
+        <tr><td>场景切换</td><td>必须与第一场景<b>不同</b>（新地点/新时间段/新氛围）</td></tr>
+        <tr><td style="color:#f44747"><span class="req-tag required">必需</span> <b>第一场景尾帧截图</b></td><td>将第一场景生成后的<b>最后一帧画面截图</b>作为第二场景的首帧参考图上传。这是 Seedance 2.0「首尾帧控制」的<b>核心依赖</b>，确保转场无缝。</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 角色参考图</td><td>与第一场景使用<b>同一张</b>角色参考图（保持角色一致性）</td></tr>
+        <tr><td><span class="req-tag required">必需</span> 新场景背景参考</td><td>第二场景需要<b>独立的一套背景参考图</b>（与第一场景不同，最多9张）</td></tr>
+        <tr><td>秒数规则</td><td>段5-8从<b>0s重新计数</b>（不是12s-24s，而是0-3,3-6,6-9,9-12）</td></tr>
+        <tr><td><span class="req-tag optional">可选</span> 转场特效参考</td><td>如需要黑场过渡、闪光转场等效果，可额外上传转场参考图/视频</td></tr>
+        <tr><td>提示词分隔</td><td>两个场景用 <code style="color:var(--keyword)">---</code> 分隔</td></tr>
+        <tr><td>生成参数</td><td>9:16 | 15s | 图生视频 | 首帧=第一场景尾帧</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // 即梦生成参数
+  html+=`<div class="req-section">
+    <div class="req-section-title">🎯 即梦 Seedance 2.0 生成参数</div>
+    <div class="req-section-body">
+      <table class="req-table">
+        <tr><th>参数</th><th colspan="2">第一场景（前15s）</th><th>第二场景（后15s）</th></tr>
+        <tr><td>模型</td><td colspan="2" style="color:var(--green)">Seedance 2.0 Fast VIP</td><td style="color:var(--green)">Seedance 2.0 Fast VIP</td></tr>
+        <tr><td>参考模式</td><td colspan="2" style="color:var(--keyword)">全能参考</td><td style="color:var(--keyword)">全能参考 + 首尾帧控制</td></tr>
+        <tr><td>比例</td><td colspan="2">9:16 竖屏</td><td>9:16 竖屏</td></tr>
+        <tr><td>时长</td><td colspan="2">15s</td><td>15s</td></tr>
+        <tr><td>参考图</td><td style="color:var(--keyword)">角色参考图</td><td style="color:#888">+ 场景1背景参考（最多9张）</td><td style="color:#f44747">角色图 + <b>场景1尾帧</b> + 场景2背景</td></tr>
+        <tr><td>参考视频</td><td colspan="2" style="color:#888">可选（最多3个15s参考视频）</td><td style="color:#888">可选</td></tr>
+        <tr><td>提示词</td><td colspan="2">中文 + 英文 双提示词</td><td>中文 + 英文 双提示词</td></tr>
+        <tr><td>预计耗时</td><td colspan="2">3-7 小时（Fast模式）</td><td>3-7 小时（Fast模式）</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  // 注意事项
+  html+=`<div class="req-section">
+    <div class="req-section-title">⚠️ 操作流程 & 注意事项</div>
+    <div class="req-section-body">
+      <b style="color:var(--keyword)">📋 正确操作顺序：</b><br>
+      ① 提交第一场景 → 等待生成完成（3-7小时）<br>
+      ② <b style="color:#f44747">截取第一场景生成的最后一帧画面（尾帧）</b><br>
+      ③ 将尾帧作为第二场景的「首帧参考图」上传<br>
+      ④ 提交第二场景 → 等待生成完成<br><br>
+      <b>铁律：</b><br>
+      • 角色铁律：她是企鹅，不是人类。上肢=黑色鳍状短翅膀（圆钝弧线形，无手指/无指甲/无关节），粉色小嘴（人脸嘴型非鸟喙）<br>
+      • 中文提示词必须以「日系萌圆暖柔handheld」开头<br>
+      • 英文提示词必须包含「kawaii penguin girl (human-like anime face, 1:2 neat bangs ahoge, pink & white onesie, black flipper wings, webbed feet, penguin body)」，严格禁止使用 beak（鸟喙）<br>
+      • 角色参考图在两个场景中<b>必须使用同一张</b>，确保角色外观一致<br>
+      • <b style="color:#f44747">第一场景尾帧是第二场景的必需输入，不可跳过</b><br>
+      • <b>不能</b>在后台同时提交两个场景——必须先等第一场景完成，再提交第二场景<br>
+      • 生成前请确认 DEEPSEEK_API_KEY 已设置且余额充足
+    </div>
+  </div>`;
+
+  html+=`</div>`;
+  document.getElementById('lineNums').innerHTML='';
+  document.getElementById('editorContent').innerHTML=html;
+}
+
+// ═══ 配置保存 ═══
+let cfgDirty=false;
+function onDurationChange(){
+  let inp=document.getElementById('cfgDuration');
+  if(inp){
+    let v=parseInt(inp.value);
+    if(v<1) inp.value=1;
+    if(v>120) inp.value=120;
+    cfgDirty=true;
+  }
+}
+async function saveConfig(){
+  let inp=document.getElementById('cfgDuration');
+  if(!inp) return;
+  let duration=parseInt(inp.value);
+  if(duration<1||duration>120){showToast('⚠️ 时长需在 1-120 分钟之间');return;}
+  try{
+    let r=await fetch('/api/config',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({duration:duration})
+    });
+    let d=await r.json();
+    if(d.ok){
+      showToast(`✅ 已保存！运行时长为 ${d.duration} 分钟`);
+      cfgDirty=false;
+    }
+  }catch(e){
+    showToast('❌ 保存失败，请确认服务器已启动');
+  }
+}
+function startGen(){
+  // 即时反馈
+  let btn=document.getElementById("tbRun");
+  btn.textContent="▶ Connecting..."; btn.disabled=true;
+  let startUrl = cfg().apiStart;
+  fetch(startUrl,{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      showToast(`🚀 ${cfg().fileIcon} ${cfg().displayName}流水线已启动，切换到「生成预览」查看实时内容`);
+      wasRunning=true;
+      document.getElementById("tbStop").disabled=false;
+      document.getElementById("tbHint").textContent="🔵 生成中...";
+      document.getElementById("tbHint").className='tb-hint';
+      btn.textContent="▶ Run Pipeline";
+    }
+  }).catch(e=>{
+    showToast("❌ 无法连接服务器，请确认已启动 generate_scripts.py");
+    btn.innerHTML='<span class="tb-icon">▶</span> Run Pipeline';
+    btn.disabled=false;
+    console.error("startGen error:", e);
+  });
+}
+function stopGen(){
+  document.getElementById("tbStop").disabled=true;
+  let stopUrl = cfg().apiStop;
+  fetch(stopUrl,{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      showToast("⏹ 已终止");
+      document.getElementById("tbRun").disabled=false;
+      document.getElementById("tbHint").textContent="Ctrl+R to start";
+    }
+  }).catch(e=>{
+    showToast("❌ 无法连接服务器");
+    console.error("stopGen error:", e);
+  });
+}
+
+// ═══ 键盘快捷键 ═══
+document.addEventListener('keydown',(e)=>{
+  if(e.ctrlKey && e.key==='r'){
+    e.preventDefault(); startGen(); showToast('Ctrl+R → 启动生成');
+  }
+  if(e.ctrlKey && e.key==='c'){
+    e.preventDefault(); stopGen(); showToast('Ctrl+C → 终止');
+  }
+  if(e.ctrlKey && e.key==='l'){
+    e.preventDefault();
+    let t=document.getElementById('terminalBody');
+    t.scrollTop = t.scrollHeight;
+  }
+});
+
+// ═══ 标签页交互 ═══
+document.getElementById('tabMain').onclick = function(){
+  if(streamActive) return;
+  this.classList.add('active');
+  document.getElementById('tabStream').classList.remove('active','live-tab');
+  document.getElementById('tabConfig').classList.remove('active');
+  document.getElementById('tabReqs').classList.remove('active');
+  isConfigTab = false;
+  document.getElementById('streamView').classList.remove('active');
+  document.getElementById('editorContent').parentElement.style.display='';
+};
+// ── 流式预览 ──
+document.getElementById('tabStream').onclick = function(){
+  showStreamTab();
+  isConfigTab=false;
+  document.getElementById('editorContent').parentElement.style.display='none';
+  document.getElementById('streamView').classList.add('active');
+};
+// ── 需求标签页 ──
+document.getElementById('tabReqs').onclick = function(){
+  if(streamActive) return;
+  this.classList.add('active');
+  document.getElementById('tabMain').classList.remove('active');
+  document.getElementById('tabStream').classList.remove('active','live-tab');
+  document.getElementById('tabConfig').classList.remove('active');
+  isConfigTab = true;
+  document.getElementById('streamView').classList.remove('active');
+  document.getElementById('editorContent').parentElement.style.display='';
+  buildReqsView();
+};
+document.getElementById('tabConfig').onclick = function(){
+  if(streamActive) return;
+  this.classList.add('active');
+  document.getElementById('tabMain').classList.remove('active');
+  document.getElementById('tabStream').classList.remove('active','live-tab');
+  document.getElementById('tabReqs').classList.remove('active');
+  isConfigTab = true;
+  document.getElementById('streamView').classList.remove('active');
+  document.getElementById('editorContent').parentElement.style.display='';
+  // 切换到可编辑配置视图
+  let configLines = [
+    `<span class="${'cm'}">/**</span>`,
+    `<span class="${'cm'}"> * Pipeline 配置文件（可编辑）</span>`,
+    `<span class="${'cm'}"> * 修改后点击 💾 保存生效，下次启动时加载</span>`,
+    `<span class="${'cm'}"> */</span>`,``,
+    `<span class="kw">export const</span> <span class="vr">config</span> = {`,
+    `<div class="config-edit">  <span class="vr">duration</span>: <input type="number" id="cfgDuration" value="30" min="1" max="120" onchange="onDurationChange()">,  <span class="${'cm'}">// 运行时长（分钟）</span> <button class="save-btn" onclick="saveConfig()" title="保存设置">💾 保存</button></div>`,
+    `  <span class="vr">model</span>: <span class="${'str'}">'deepseek-chat'</span>,`,
+    `  <span class="vr">maxTokens</span>: <span class="${'nm'}">16000</span>,`,
+    `  <span class="vr">temperature</span>: <span class="${'nm'}">0.8</span>,`,
+    `  <span class="vr">outputDir</span>: <span class="${'str'}">'E:\\\\咕咕嘎嘎\\\\'</span>,`,
+    `  <span class="vr">format</span>: <span class="${'str'}">'双段独立 · 12-15s×2 · 9:16竖屏'</span>,`,
+    `  <span class="vr">platform</span>: <span class="${'str'}">'Seedance 2.0 Fast VIP'</span>,`,
+    `  <span class="vr">referenceMode</span>: <span class="${'str'}">'全能参考'</span>,`,
+    `};`,
+  ];
+  let nums='';
+  for(let i=1;i<=configLines.length;i++) nums+=`<span>${i}</span>`;
+  document.getElementById('lineNums').innerHTML = nums;
+  document.getElementById('editorContent').innerHTML = configLines.join('\n');
+  // 从服务器获取当前时长
+  fetch('/api/status').then(r=>r.json()).then(d=>{
+    let inp=document.getElementById('cfgDuration');
+    if(inp && d.duration_min) inp.value=d.duration_min;
+  }).catch(()=>{});
+};
+
+// ═══ 启动 ═══
+poll(); pollTimer = setInterval(poll, 800);
+updateFileTree([]);
+buildEditorContent({total:0,errors:0,running:false,completed:false,remaining:totalDurationSec,current:'待机中'});
+updateProgress({total:0,errors:0,running:false,completed:false,remaining:totalDurationSec});
+document.getElementById("tbRun").disabled=false;
+document.getElementById("tbStop").disabled=true;
+updateTerminal([], '待机中');
+updateStatusBar({running:false,completed:false,remaining:totalDurationSec,current:'待机中'});
+document.getElementById('modeNormal').classList.add('active');
+</script>
+
+</body>
+</html>

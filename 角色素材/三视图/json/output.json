@@ -1,0 +1,4 @@
+{
+  "error": "TOKEN_NOT_CONFIGURED",
+  "message": "Authentication token is required. Provide via --token flag or set the BUDDY_CLOUD_TOKEN environment variable."
+}
