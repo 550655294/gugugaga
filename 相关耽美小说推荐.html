@@ -31,7 +31,7 @@ blockquote{color:#666;background:#f1f3f5;border-left:4px solid #9aa4b2;margin:10
 <div class="spacer"></div>
 <h2>合格推荐</h2>
 <div class="spacer"></div>
-<blockquote>以下为按当前口径保留或重新核验后纳入的合格推荐；主受1vN/多人箭头优先，主攻备选会在条目中明确标注。</blockquote>
+<blockquote>以下为按当前口径保留或重新核验后纳入的合格推荐；默认按书名字数从高到低排列，主受1vN/多人箭头优先，主攻备选会在条目中明确标注。</blockquote>
 <div class="spacer"></div>
 <section id="main-receive-section" class="recommendation-section"><h3>主受优先</h3><p class="section-note">主受、万人迷、多人箭头或1vN作品优先展示。</p><div id="main-receive-books"></div></section>
 <section id="main-attack-section" class="recommendation-section"><h3>主攻次选</h3><p class="section-note">仅保留明确标注主攻视角、总攻或主攻备选的作品。</p><div id="main-attack-books"></div></section>
@@ -1115,6 +1115,15 @@ function organizeRecommendations(){
   };
   if(!targets.receive||!targets.attack||!targets.unknown)return;
   const articles=Array.from(document.querySelectorAll('article.book'));
+  const wordCount=(article)=>{
+    const text=article.querySelector('.details')?.textContent||'';
+    const wan=text.match(/(\d+(?:\.\d+)?)\s*万字/);
+    if(wan)return Number(wan[1])*10000;
+    const exact=text.match(/(\d[\d,]*)字/);
+    return exact?Number(exact[1].replace(/,/g,'')):0;
+  };
+  articles.forEach((article,index)=>{article.dataset.originalIndex=String(index);});
+  articles.sort((a,b)=>wordCount(b)-wordCount(a)||Number(a.dataset.originalIndex)-Number(b.dataset.originalIndex));
   for(const article of articles){
     const text=article.querySelector('.details')?.textContent||'';
     const attack=/主攻备选|主攻视角|主攻[、；/]|总攻|一攻多受|攻视角/.test(text);
